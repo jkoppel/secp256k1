@@ -1,0 +1,280 @@
+{
+  "title": "13.3: Core Algorithm – src/modules/schnorrsig/main_impl.h",
+  "id": "0X83aWglfKfvAWyxTevq+nbEk0JfmjHrpfy0dBaXhnY=",
+  "originalId": 2560,
+  "position": 61,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour follows a message as it becomes a `BIP-340 Schnorr signature` and then gets verified, pausing at every constant-time and determinism safeguard.",
+      "title": "",
+      "id": "30428"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 16-27 hard-code the `SHA-256` state after hashing `tag‖tag` for `BIP0340/nonce`. Every nonce derivation can therefore skip an entire compression round.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 28
+        }
+      ],
+      "title": "",
+      "id": "30429"
+    },
+    {
+      "type": "highlight",
+      "description": "Similarly, lines 32-43 embed the state for the `BIP0340/aux` tag, used when mixing in auxiliary randomness.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 30,
+          "end": 44
+        }
+      ],
+      "title": "",
+      "id": "30430"
+    },
+    {
+      "type": "highlight",
+      "description": "A third frozen state (106-116) makes computing the challenge hash during signing and verification just as cheap and deterministic.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 104,
+          "end": 117
+        }
+      ],
+      "title": "",
+      "id": "30431"
+    },
+    {
+      "type": "highlight",
+      "description": "`bip340_algo` (48) is the canonical tag string, and `schnorrsig_extraparams_magic` (50) is a four-byte canary that must match for custom signing parameters.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 48,
+          "end": 50
+        }
+      ],
+      "title": "",
+      "id": "30432"
+    },
+    {
+      "type": "highlight",
+      "description": "The **public header** exposes exactly the same **magic bytes** so callers can build an `extraparams` object that the **library** recognises.",
+      "file": "include/secp256k1_schnorrsig.h",
+      "highlight": [
+        {
+          "start": 82,
+          "end": 90
+        }
+      ],
+      "title": "",
+      "id": "30433"
+    },
+    {
+      "type": "highlight",
+      "description": "`nonce_function_bip340` immediately rejects a `NULL` algo pointer, enforcing explicit domain separation between protocols.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 52,
+          "end": 60
+        }
+      ],
+      "title": "",
+      "id": "30434"
+    },
+    {
+      "type": "highlight",
+      "description": "If 32 bytes of caller-supplied randomness are provided they are hashed under the pre-tagged `aux` state and XOR-mixed with the secret key — a constant-time masking step.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 61,
+          "end": 68
+        }
+      ],
+      "title": "",
+      "id": "30435"
+    },
+    {
+      "type": "highlight",
+      "description": "When no randomness is supplied the fixed `ZERO_MASK` reproduces `TaggedHash(\"aux\",0³²)`, keeping the procedure fully deterministic.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 69,
+          "end": 79
+        }
+      ],
+      "title": "",
+      "id": "30436"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 84-89 choose between the `fast pre-tagged midstate` and a `generic tagged-hash initialiser`, preventing `nonce reuse across algorithms`.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 81,
+          "end": 89
+        }
+      ],
+      "title": "",
+      "id": "30437"
+    },
+    {
+      "type": "highlight",
+      "description": "The function `hashes masked_key‖pk.x‖msg`, finalises into `nonce32`, then wipes the `SHA` object and temporary buffer.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 91,
+          "end": 99
+        }
+      ],
+      "title": "",
+      "id": "30438"
+    },
+    {
+      "type": "highlight",
+      "description": "`schnorrsig_challenge` wraps `e = H_tag(r.x‖pk.x‖m)` and immediately reduces it mod `n` into a scalar.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 119,
+          "end": 133
+        }
+      ],
+      "title": "",
+      "id": "30439"
+    },
+    {
+      "type": "highlight",
+      "description": "`sign_internal` loads the `keypair`; if the `public key`’s `Y` is odd, the `secret scalar` is negated so the `x-only form` is always even, as required by `BIP-340`.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 157,
+          "end": 164
+        }
+      ],
+      "title": "",
+      "id": "30440"
+    },
+    {
+      "type": "highlight",
+      "description": "The deterministic nonce is generated; if the call fails or returns `k = 0`, `k` is conditionally replaced with `1` in constant time.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 165,
+          "end": 171
+        }
+      ],
+      "title": "",
+      "id": "30441"
+    },
+    {
+      "type": "highlight",
+      "description": "`k·G` gives `R`. Because `R` is public the code can branch on its parity: if `R.y` is odd, `k` is negated so the published `r.y` is even.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 172,
+          "end": 180
+        }
+      ],
+      "title": "",
+      "id": "30442"
+    },
+    {
+      "type": "highlight",
+      "description": "The signature scalar is `s = k + e·sk`.  All arithmetic uses constant-time helpers, and `r.x` and `s` are written straight into `sig64`.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 182,
+          "end": 189
+        }
+      ],
+      "title": "",
+      "id": "30443"
+    },
+    {
+      "type": "highlight",
+      "description": "Whether signing succeeds or not, every secret — `sig64` on failure, `k`, `sk`, the `seckey` buffer and `Rj` — is wiped.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 190,
+          "end": 194
+        }
+      ],
+      "title": "",
+      "id": "30444"
+    },
+    {
+      "type": "highlight",
+      "description": "`sign32` and `sign` forward to the internal function with the default nonce generator.  `sign_custom` first checks the magic bytes, then lets callers plug in their own nonce logic.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 199,
+          "end": 221
+        }
+      ],
+      "title": "",
+      "id": "30445"
+    },
+    {
+      "type": "highlight",
+      "description": "Verification starts by parsing `r.x` and `s`, checking ranges, and loading the `x-only public key`.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 223,
+          "end": 247
+        }
+      ],
+      "title": "",
+      "id": "30446"
+    },
+    {
+      "type": "highlight",
+      "description": "A fresh challenge `e` is computed, and one `ecmult` call evaluates `R′ = s·G − e·P` using **Shamir’s trick**.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 252,
+          "end": 260
+        }
+      ],
+      "title": "",
+      "id": "30447"
+    },
+    {
+      "type": "highlight",
+      "description": "Success requires `R′` to be non-infinite, to have even `Y`, and to share its `X` coordinate with the provided `r.x` — all branchless tests after the early exits.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 261,
+          "end": 268
+        }
+      ],
+      "title": "",
+      "id": "30448"
+    },
+    {
+      "type": "textOnly",
+      "description": "You have now seen every security-sensitive step: fast tagged hashing, hardened deterministic nonces, constant-time signing, and the verifier’s single multi-scalar multiplication check.",
+      "title": "",
+      "id": "30449"
+    }
+  ]
+}

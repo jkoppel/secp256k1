@@ -1,0 +1,144 @@
+{
+  "title": "6.3: Constant-time Heap-Sort Helper",
+  "id": "dOATH4A/dR8strzALl8P2C3IVRtJaZKyh6vAqDfpFFk=",
+  "originalId": 2528,
+  "position": 29,
+  "steps": [
+    {
+      "type": "highlight",
+      "description": "The comment introduces `secp256k1_hsort` as an in-place, iterative heapsort that mimics `qsort_r` but guarantees predictable performance even on adversarial input – a requirement for cryptographic code.",
+      "file": "src/hsort.h",
+      "highlight": [
+        {
+          "start": 13,
+          "end": 30
+        }
+      ],
+      "title": "",
+      "id": "30181"
+    },
+    {
+      "type": "highlight",
+      "description": "`heap_child1`/`heap_child2` compute `2·i+1` and `2·i+2`.  Lines 17 & 22 embed `VERIFY_CHECK` guards that mathematically prove the multiplications cannot overflow `SIZE_MAX`, shielding constant-time safety.",
+      "file": "src/hsort_impl.h",
+      "highlight": [
+        {
+          "start": 16,
+          "end": 24
+        }
+      ],
+      "title": "",
+      "id": "30182"
+    },
+    {
+      "type": "highlight",
+      "description": "`heap_swap64` copies ≤64 bytes through a fixed-size buffer. Using `memcpy`→`memmove`→`memcpy` keeps data-dependent branches out of the critical path and matches cache-line size for constant timing.",
+      "file": "src/hsort_impl.h",
+      "highlight": [
+        {
+          "start": 26,
+          "end": 32
+        }
+      ],
+      "title": "",
+      "id": "30183"
+    },
+    {
+      "type": "highlight",
+      "description": "`heap_swap` iterates from the tail of each element, repeatedly invoking `heap_swap64` until `64 bytes remain` (l. 38-42). Large objects are therefore moved in uniform `64-byte` chunks, avoiding variable-length copies.",
+      "file": "src/hsort_impl.h",
+      "highlight": [
+        {
+          "start": 34,
+          "end": 43
+        }
+      ],
+      "title": "",
+      "id": "30184"
+    },
+    {
+      "type": "highlight",
+      "description": "`heap_down` starts with `while(i < heap_size/2)` (l. 53) so only internal nodes enter the loop. The surrounding `VERIFY_CHECK` commentary formally demonstrates that child indices remain in-range.",
+      "file": "src/hsort_impl.h",
+      "highlight": [
+        {
+          "start": 51,
+          "end": 63
+        }
+      ],
+      "title": "",
+      "id": "30185"
+    },
+    {
+      "type": "highlight",
+      "description": "Inside the loop, the comparator decides which child maximises the heap property.  Branches at `l. 80-89` swap with `child2` when it is ≥ `child1`; `l. 91-94` handles the `child1`-only case; both paths short-circuit when no swap is needed, guaranteeing **O(log n)** sifts.",
+      "file": "src/hsort_impl.h",
+      "highlight": [
+        {
+          "start": 80,
+          "end": 96
+        }
+      ],
+      "title": "",
+      "id": "30186"
+    },
+    {
+      "type": "highlight",
+      "description": "After the loop the proof (l. 98-104) shows both children are now out-of-bounds, meaning we have reached a leaf and the sub-heap rooted at `i` obeys the max-heap invariant.",
+      "file": "src/hsort_impl.h",
+      "highlight": [
+        {
+          "start": 98,
+          "end": 105
+        }
+      ],
+      "title": "",
+      "id": "30187"
+    },
+    {
+      "type": "highlight",
+      "description": "`hsort`’s first phase builds a max-heap by calling `heap_down` on every non-leaf index from `⌊count/2⌋–1` down to `0`, costing `O(n)`.",
+      "file": "src/hsort_impl.h",
+      "highlight": [
+        {
+          "start": 113,
+          "end": 115
+        }
+      ],
+      "title": "",
+      "id": "30188"
+    },
+    {
+      "type": "highlight",
+      "description": "The extraction phase repeatedly swaps the root with the last element (`l. 118`) and re-heaps the reduced array (`l. 121`), yielding a full sort in predictable `O(n log n)` time without recursion.",
+      "file": "src/hsort_impl.h",
+      "highlight": [
+        {
+          "start": 116,
+          "end": 122
+        }
+      ],
+      "title": "",
+      "id": "30189"
+    },
+    {
+      "type": "highlight",
+      "description": "Real-world usage: `secp256k1_ec_pubkey_sort` feeds an array of pubkey pointers into `secp256k1_hsort`, ensuring the multisig key list is ordered deterministically without opening timing side-channels.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 333,
+          "end": 338
+        }
+      ],
+      "title": "",
+      "id": "30190"
+    },
+    {
+      "type": "textOnly",
+      "description": "You have seen why a custom `heapsort` is preferred, how it prevents overflow and timing variance, the core `sift-down` logic, the two-phase driver, and where it is applied inside `MuSig2`-related key aggregation.",
+      "title": "",
+      "id": "30191"
+    }
+  ]
+}

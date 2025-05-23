@@ -1,0 +1,105 @@
+{
+  "title": "2.5: ARM Assembly Inner Loops (10×26)",
+  "id": "NWNEguToK2bjITNX1dPUpVyd0oJAWL/xCNHoidZPmyc=",
+  "originalId": 2507,
+  "position": 10,
+  "steps": [
+    {
+      "type": "highlight",
+      "description": "Right at the top the author explains the key optimisation: two independent multiplication `passes` are interleaved so the **ARM core** can overlap loads, multiplies and carry handling without spilling results back to memory.",
+      "file": "src/asm/field_10x26_arm.s",
+      "highlight": [
+        {
+          "start": 8,
+          "end": 16
+        }
+      ],
+      "title": "",
+      "id": "29959"
+    },
+    {
+      "type": "highlight",
+      "description": "Three constants drive the whole routine.  `field_R0` and `field_R1` are the (2^32)^k residues used to fold carries back into the 26-bit radix, and `field_not_M` is the mask that peels off the low 26 bits of a limb during reduction.",
+      "file": "src/asm/field_10x26_arm.s",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 28
+        }
+      ],
+      "title": "",
+      "id": "29960"
+    },
+    {
+      "type": "highlight",
+      "description": "The prologue of `secp256k1_fe_mul_inner` shows the calling convention and, in lines 49-57, a fixed register map: `r3:r4`=`c`, `r5:r6`=`d`, `r11:r12`=`c′`, `r9:r10`=`d′`.  These four 128-bit accumulators stay resident in registers for the whole algorithm.",
+      "file": "src/asm/field_10x26_arm.s",
+      "highlight": [
+        {
+          "start": 40,
+          "end": 61
+        }
+      ],
+      "title": "",
+      "id": "29961"
+    },
+    {
+      "type": "highlight",
+      "description": "The first `A/B` pair computes thirteen products.  Notice the ping-pong pattern: every `umull/umlal` that feeds `d` is mirrored by one feeding `d′`, keeping both partial sums hot while loads for the next operands are already in flight.",
+      "file": "src/asm/field_10x26_arm.s",
+      "highlight": [
+        {
+          "start": 61,
+          "end": 98
+        }
+      ],
+      "title": "",
+      "id": "29962"
+    },
+    {
+      "type": "highlight",
+      "description": "When a column is finished the low 26 bits are isolated with `bic` and stored as `t9/u0` on the stack, then the high part is right-shifted so the next column can continue without an explicit carry loop.",
+      "file": "src/asm/field_10x26_arm.s",
+      "highlight": [
+        {
+          "start": 104,
+          "end": 116
+        }
+      ],
+      "title": "",
+      "id": "29963"
+    },
+    {
+      "type": "highlight",
+      "description": "After ten interleaved columns the routine gathers `t0…t9`, applies the final `R0/R1` corrections and writes the canonical ten-limb result back to `r[0…9]` – all before popping the stack frame.",
+      "file": "src/asm/field_10x26_arm.s",
+      "highlight": [
+        {
+          "start": 455,
+          "end": 512
+        }
+      ],
+      "title": "",
+      "id": "29964"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_fe_sqr_inner` begins with the same register map and comments. Because `a = b`, many products become `a[i]*2` and the symmetry further reduces work, yet the interleaving and carry strategy are identical.",
+      "file": "src/asm/field_10x26_arm.s",
+      "highlight": [
+        {
+          "start": 519,
+          "end": 544
+        }
+      ],
+      "title": "",
+      "id": "29965"
+    },
+    {
+      "type": "textOnly",
+      "description": "This hand-written path exists to squeeze maximum throughput out of **32-bit ARM** cores: all ten limbs stay in registers, memory traffic is limited to the temporary `t0`…`t9` saves, and two passes are interleaved to hide latency. During configure the option `--with-asm=arm32` (or auto-detection) sets **USE_EXTERNAL_ASM** and Makefile.am adds `field_10x26_arm.s`, transparently replacing the portable C implementation whenever the build targets **32-bit ARM**.",
+      "title": "",
+      "id": "29966"
+    }
+  ]
+}

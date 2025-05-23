@@ -1,0 +1,143 @@
+{
+  "title": "7.3: Preallocated Context API",
+  "id": "HUPKb1TUznhWdkaZz9n5uWmMFv1fSBwx/fxmdv6qxmo=",
+  "originalId": 2531,
+  "position": 32,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "`libsecp256k1` can run without any dynamic memory allocation by constructing its context directly inside a caller-supplied buffer. Everything you need lives in the helper header `secp256k1_preallocated.h`.",
+      "title": "",
+      "id": "30198"
+    },
+    {
+      "type": "highlight",
+      "description": "The header opens with a hard guarantee: none of the helpers that follow will ever invoke `malloc`, `calloc`, `realloc`, or `free`.",
+      "file": "include/secp256k1_preallocated.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 24
+        }
+      ],
+      "title": "",
+      "id": "30199"
+    },
+    {
+      "type": "highlight",
+      "description": "Step 1 – find out how large your buffer must be.  `secp256k1_context_preallocated_size()` deterministically returns the exact byte count for the feature flags you pass.",
+      "file": "include/secp256k1_preallocated.h",
+      "highlight": [
+        {
+          "start": 26,
+          "end": 37
+        }
+      ],
+      "title": "",
+      "id": "30200"
+    },
+    {
+      "type": "highlight",
+      "description": "**Step 2** – build the context in place.  `secp256k1_context_preallocated_create()` writes into the buffer and then treats that memory block as exclusively owned until you destroy the context.",
+      "file": "include/secp256k1_preallocated.h",
+      "highlight": [
+        {
+          "start": 39,
+          "end": 69
+        }
+      ],
+      "title": "",
+      "id": "30201"
+    },
+    {
+      "type": "highlight",
+      "description": "If you want an exact copy of an existing context, first ask how big the copy must be with `secp256k1_context_preallocated_clone_size()`.",
+      "file": "include/secp256k1_preallocated.h",
+      "highlight": [
+        {
+          "start": 71,
+          "end": 79
+        }
+      ],
+      "title": "",
+      "id": "30202"
+    },
+    {
+      "type": "highlight",
+      "description": "Then call `secp256k1_context_preallocated_clone()` to duplicate the context into another caller-owned block under the same ownership rules.",
+      "file": "include/secp256k1_preallocated.h",
+      "highlight": [
+        {
+          "start": 81,
+          "end": 103
+        }
+      ],
+      "title": "",
+      "id": "30203"
+    },
+    {
+      "type": "highlight",
+      "description": "When you are done, `secp256k1_context_preallocated_destroy()` merely ends the library’s use of the memory.  Freeing or re-using the buffer is entirely up to the caller.",
+      "file": "include/secp256k1_preallocated.h",
+      "highlight": [
+        {
+          "start": 105,
+          "end": 128
+        }
+      ],
+      "title": "",
+      "id": "30204"
+    },
+    {
+      "type": "textOnly",
+      "description": "Now contrast this with the original convenience API in `secp256k1.h`, which manages memory for you by allocating internally.",
+      "title": "",
+      "id": "30205"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_context_create()` explicitly promises a single malloc per context and advises users who must avoid dynamic allocation to use the preallocated API instead.",
+      "file": "include/secp256k1.h",
+      "highlight": [
+        {
+          "start": 258,
+          "end": 286
+        }
+      ],
+      "title": "",
+      "id": "30206"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_context_clone()` follows the same malloc-based model.",
+      "file": "include/secp256k1.h",
+      "highlight": [
+        {
+          "start": 287,
+          "end": 301
+        }
+      ],
+      "title": "",
+      "id": "30207"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_context_destroy()` frees that internal allocation; passing a preallocated context here would be **undefined behaviour**.",
+      "file": "include/secp256k1.h",
+      "highlight": [
+        {
+          "start": 303,
+          "end": 319
+        }
+      ],
+      "title": "",
+      "id": "30208"
+    },
+    {
+      "type": "textOnly",
+      "description": "By switching to the **preallocated helpers** you trade `automatic memory management` for `deterministic, allocator-free operation`—ideal for **embedded**, **real-time**, and **formally-verified** environments where `dynamic allocation` is disallowed.",
+      "title": "",
+      "id": "30209"
+    }
+  ]
+}

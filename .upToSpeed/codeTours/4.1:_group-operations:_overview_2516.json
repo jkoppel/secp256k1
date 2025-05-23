@@ -1,0 +1,94 @@
+{
+  "title": "4.1: group-operations: Overview",
+  "id": "D9bOYK+ChK6MWiemfNOaboqFWw69FdoEqq79D2aSs5Y=",
+  "originalId": 2516,
+  "position": 17,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This short tour maps out the `group-operations` module. It introduces the **point data-types**, the **constant-time discipline**, the **configurable generator**, the `VERIFY` infrastructure, and shows where the **heavy arithmetic** resides.",
+      "title": "",
+      "id": "30003"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/group.h"
+      ],
+      "description": "`group.h` is the public façade. Near the top you can spot the two point representations—`secp256k1_ge` (affine) and `secp256k1_gej` (Jacobian)—followed by a storage helper and a long stretch of function prototypes that make up the external **API**.",
+      "title": "",
+      "id": "30004"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 47-54 define the maximum **magnitude** each coordinate may reach.  These tight bounds let field operations remain branch-free and therefore constant-time.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 47,
+          "end": 54
+        }
+      ],
+      "title": "",
+      "id": "30005"
+    },
+    {
+      "type": "highlight",
+      "description": "Inside `group_impl.h` the canonical generator `SECP256K1_G` is hard-coded, but when `EXHAUSTIVE_TEST_ORDER` is defined the preamble above swaps in tiny toy generators so every arithmetic path can be brute-forced.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 35,
+          "end": 44
+        }
+      ],
+      "title": "",
+      "id": "30006"
+    },
+    {
+      "type": "highlight",
+      "description": "The `*_verify` helpers become active only when **VERIFY** is enabled. They assert field invariants and magnitude limits, giving cheap internal consistency checks without affecting production builds.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 78,
+          "end": 96
+        }
+      ],
+      "title": "",
+      "id": "30007"
+    },
+    {
+      "type": "highlight",
+      "description": "Mid-file we meet `secp256k1_gej_double` – the point-doubling work-horse.  The comment details the exact formula and counts every field operation.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 460,
+          "end": 493
+        }
+      ],
+      "title": "",
+      "id": "30008"
+    },
+    {
+      "type": "highlight",
+      "description": "Just below lives `secp256k1_gej_add_var`, the variable-time addition routine.  Together with constant-time and mixed-coordinate variants, this block carries most of the computational load.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 526,
+          "end": 588
+        }
+      ],
+      "title": "",
+      "id": "30009"
+    },
+    {
+      "type": "textOnly",
+      "description": "That’s the high-altitude view: **data types** & **API** in `group.h`, **magnitude guards**, a `swap-able generator`, **VERIFY assertions**, and the heavy arithmetic in `group_impl.h`.  Later walkthroughs will unpack each area in depth.",
+      "title": "",
+      "id": "30010"
+    }
+  ]
+}

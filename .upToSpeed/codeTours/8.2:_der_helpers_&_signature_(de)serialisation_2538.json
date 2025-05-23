@@ -1,0 +1,98 @@
+{
+  "title": "8.2: DER Helpers & Signature (De)Serialisation",
+  "id": "92Z+LNqAMpDDUN2mfBNV9b9zb0XJI0CXUgDJxIrR4H0=",
+  "originalId": 2538,
+  "position": 39,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour tracks a signature’s two 32-byte scalars as they travel through `libsecp256k1`’s strict DER helpers, showing how minimal-length, positivity and `< n` constraints are enforced at every step.",
+      "title": "",
+      "id": "30262"
+    },
+    {
+      "type": "highlight",
+      "description": "The first branch of `secp256k1_der_read_len` handles the **short-form** length.\n- Lines 40-44 guarantee the cursor is inside the buffer before touching any data.\n- Lines 45-48 refuse the X.690-forbidden value 0xFF; an early malleability guard.\n- Lines 49-53 accept 0…127 and return, delivering the decoded length in constant time.\nAll checks depend solely on public input bytes, so timing does not reveal secrets.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 36,
+          "end": 53
+        }
+      ],
+      "title": "",
+      "id": "30263"
+    },
+    {
+      "type": "highlight",
+      "description": "Long-form length decoding adds layered defences:\n- Lines 54-57 forbid the `0x80` **indefinite** marker – `BER` allows it, `DER` does not.\n- Line 60 keeps the advertised byte-count inside the remaining buffer.\n- Lines 63-66 require the first length-octet ≠`0`, guaranteeing **minimal** encoding.\n- Lines 67-71 abort if `size_t` could overflow.\n- Lines 72-76 assemble the big-endian length in a data-independent loop.\n- Lines 77-81 re-check the decoded value still fits the buffer.\n- Lines 83-86 reject any long-form that could have been short-form, closing another malleability door.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 54,
+          "end": 88
+        }
+      ],
+      "title": "",
+      "id": "30264"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_der_parse_integer` starts with structural and padding rules.\n- 95-99 insist on `INTEGER` tag `0x02`.\n- 100-106 read the length with the `helper` above and ensure it stays in-bounds.\n- 107-114 forbid excessive `0x00` or `0xFF` padding – the encoding must be shortest for a positive value.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 90,
+          "end": 114
+        }
+      ],
+      "title": "",
+      "id": "30265"
+    },
+    {
+      "type": "highlight",
+      "description": "The same function now tackles negativity, overflow and reduction.\n- 115-118 mark overflow if the high bit is set (would be negative).\n- 122-126 allow **one** leading `0x00` when needed to keep the number positive.\n- 127-129 treat any value >32 bytes as overflow.\n- 130-133 right-align the bytes and call `scalar_set_b32` – that routine sets the overflow flag if the number ≥ curve order **n**.\n- 134-136 zeroise the scalar when overflow is true so callers never see an invalid value.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 115,
+          "end": 139
+        }
+      ],
+      "title": "",
+      "id": "30266"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecdsa_sig_parse` composes the helpers.\n- 144-147 expect the outer `SEQUENCE` tag `0x30`.\n- 148-154 read its length and demand it equals the remaining buffer – catching truncation or trailing garbage immediately.\n- 156-161 parse *r* then *s* using `der_parse_integer`; any failure propagates.\n- 163-166 demand the cursor has reached the end of the `SEQUENCE`, forbidding hidden bytes.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 141,
+          "end": 169
+        }
+      ],
+      "title": "",
+      "id": "30267"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecdsa_sig_serialize` builds the minimal **DER** on output:\n\n- Lines 172-176: Copy each scalar into a 33-byte buffer with an extra zero prefix\n- Lines 177-178: Slide past redundant 0x00 while the next byte keeps the value <0x80 – stripping every unnecessary pad byte\n- Lines 179-183: Validate or return the required total size\n- Lines 184-191: Write the **SEQUENCE** header followed by two **INTEGER**s whose length octets are computed *after* trimming, guaranteeing they are already minimal",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 171,
+          "end": 191
+        }
+      ],
+      "title": "",
+      "id": "30268"
+    },
+    {
+      "type": "textOnly",
+      "description": "Resulting invariants:\n- Lengths use the shortest encoding, never `0x80` indefinite nor `0xFF`.\n- Each **INTEGER** is positive, has no super-fluous padding and is `≤32 bytes`.\n- `scalar_set_b32` ensures `r,s < n`.\nConsequently every signature serialised by `libsecp256k1` is uniquely minimal and every parsed signature must obey the same strict rules, eliminating **DER** malleability while keeping the code constant-time with respect to secret data.",
+      "title": "",
+      "id": "30269"
+    }
+  ]
+}

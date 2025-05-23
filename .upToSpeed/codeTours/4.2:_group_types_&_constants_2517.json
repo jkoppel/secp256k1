@@ -1,0 +1,150 @@
+{
+  "title": "4.2: Group Types & Constants",
+  "id": "VzIcfoa0Dn0CXeJHJrar9f+Ugvbfi3wuE57bY1v2sT0=",
+  "originalId": 2517,
+  "position": 18,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Everything that follows in the group logic hangs on the short definitions in this header. We will descend from the include guard, through each data type and macro, then skim the long list of prototypes to see the toolkit they provide.",
+      "title": "",
+      "id": "30049"
+    },
+    {
+      "type": "highlight",
+      "description": "The guard forbids double inclusion and, by pulling in `field.h`, makes it clear that every coordinate is fundamentally a field element.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 10
+        }
+      ],
+      "title": "",
+      "id": "30050"
+    },
+    {
+      "type": "highlight",
+      "description": "In affine representation a point is an `(x,y)` pair plus a bit for the point at infinity. Because there is no projective factor, the curve equation already holds; no denominator needs tracking or reducing.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 16,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "30051"
+    },
+    {
+      "type": "highlight",
+      "description": "Jacobian points carry a third field element `z`. The hidden affine coordinates are `x/z²` and `y/z³`, so the same infinity flag suffices—the case `z=0` naturally models the neutral element.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 28,
+          "end": 33
+        }
+      ],
+      "title": "",
+      "id": "30052"
+    },
+    {
+      "type": "highlight",
+      "description": "The storage variant replaces full-featured field elements with their pre-normalised, read-only counterparts. That makes large constant tables cheaper and avoids run-time normalisation.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 38,
+          "end": 41
+        }
+      ],
+      "title": "",
+      "id": "30053"
+    },
+    {
+      "type": "highlight",
+      "description": "**Macros** create `compile-time` `affine constants` (and the special `infinity` value) by simply embedding `limb literals` into two `field elements` and setting the `infinity flag`.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 24
+        }
+      ],
+      "title": "",
+      "id": "30054"
+    },
+    {
+      "type": "highlight",
+      "description": "`Jacobian` versions wire in a '`z = 1`' limb array so the constant is immediately usable in projective formulas. The standard generator point is declared through this `macro` elsewhere.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 35,
+          "end": 36
+        }
+      ],
+      "title": "",
+      "id": "30055"
+    },
+    {
+      "type": "highlight",
+      "description": "These upper bounds state how far from normalisation each coordinate is allowed to drift. Every `VERIFY` build asserts them, giving early warning if arithmetic blows up a limb.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 47,
+          "end": 53
+        }
+      ],
+      "title": "",
+      "id": "30056"
+    },
+    {
+      "type": "highlight",
+      "description": "The first wave of prototypes shows basic constructors, validation, and `affine⇔Jacobian` conversions—enough to create points and move between coordinate systems.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 55,
+          "end": 88
+        }
+      ],
+      "title": "",
+      "id": "30057"
+    },
+    {
+      "type": "highlight",
+      "description": "Further down appear `batch helpers`, `mixed-addition` and `doubling routines`, `constant-time conditional moves`, and `field-level serialisation utilities`.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 107,
+          "end": 176
+        }
+      ],
+      "title": "",
+      "id": "30058"
+    },
+    {
+      "type": "highlight",
+      "description": "The tail finishes with `subgroup tests` and the `GE_VERIFY` macros. Together they promise that any `function` using these types can enforce correctness cheaply in debug builds.",
+      "file": "src/group.h",
+      "highlight": [
+        {
+          "start": 177,
+          "end": 214
+        }
+      ],
+      "title": "",
+      "id": "30059"
+    },
+    {
+      "type": "textOnly",
+      "description": "With these structures, macros, and invariants in mind, reading any signature in `group_impl.h` becomes straightforward: every function manipulates `ge`, `gej`, or their storage twins while respecting the magnitude rules we just studied.",
+      "title": "",
+      "id": "30060"
+    }
+  ]
+}

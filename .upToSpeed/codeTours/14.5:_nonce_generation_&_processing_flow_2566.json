@@ -1,0 +1,241 @@
+{
+  "title": "14.5: Nonce generation & processing flow",
+  "id": "B2wZ4RU68fZYfj1u5zewHckN4581W4Bg/2Wy/pkuJkk=",
+  "originalId": 2566,
+  "position": 67,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Now that the `data-structures` are familiar, let’s trace how a **MuSig2** nonce is produced, forwarded through aggregation and finally consumed when the signing session is prepared.",
+      "title": "",
+      "id": "30333"
+    },
+    {
+      "type": "highlight",
+      "description": "Domain-separation à la `BIP-340`: a pre-computed `SHA-256` mid-state for the tag `“MuSig/aux”`.  It is used only when the optional secret key is mixed with fresh randomness.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 322,
+          "end": 335
+        }
+      ],
+      "title": "",
+      "id": "30334"
+    },
+    {
+      "type": "highlight",
+      "description": "A second mid-state, tagged `MuSig/nonce`, seeds every hash that derives the actual nonce – isolating it from the auxiliary RNG step.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 337,
+          "end": 350
+        }
+      ],
+      "title": "",
+      "id": "30335"
+    },
+    {
+      "type": "highlight",
+      "description": "`nonce_function_musig()` digests six inputs (all length-prefixed):\n- 32-byte session RNG (always)\n- optional **seckey** (XOR into the RNG hash)\n- optional 32-byte message\n- signer's 33-byte compressed `pk`\n- 32-byte aggregate key\n- optional 32-byte **\"extra\"** field.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 352,
+          "end": 379
+        }
+      ],
+      "title": "",
+      "id": "30336"
+    },
+    {
+      "type": "highlight",
+      "description": "Appending counter bytes `0` and `1`, the function finalises the hash twice and converts each digest into a **scalar**.  The pair `k[0]`, `k[1]` forms the secret Schnorr nonce.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 380,
+          "end": 393
+        }
+      ],
+      "title": "",
+      "id": "30337"
+    },
+    {
+      "type": "highlight",
+      "description": "`musig_nonce_gen_internal()` begins by validating arguments, ensuring a built generator table, checking the optional seckey, and serialising the signer’s public key.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 395,
+          "end": 406
+        }
+      ],
+      "title": "",
+      "id": "30338"
+    },
+    {
+      "type": "highlight",
+      "description": "The aggregate key (if present) is serialised, `nonce_function_musig()` is called, and the resulting scalars are stored \t6 together with the pk \t6 inside the `secnonce` cache, followed by a constant-time invalidation if any earlier check failed.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 420,
+          "end": 447
+        }
+      ],
+      "title": "",
+      "id": "30339"
+    },
+    {
+      "type": "highlight",
+      "description": "`k[0]` and `k[1]` are immediately mapped to group elements, the secret scalars are wiped, and the two affine points are saved in the `public-nonce` object.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 448,
+          "end": 466
+        }
+      ],
+      "title": "",
+      "id": "30340"
+    },
+    {
+      "type": "highlight",
+      "description": "`nonce_gen()` is the high-level API that accepts 32 bytes of fresh randomness. It rejects the all-zero string and, once successful, zeros the caller-provided buffer to avoid accidental reuse.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 469,
+          "end": 495
+        }
+      ],
+      "title": "",
+      "id": "30341"
+    },
+    {
+      "type": "highlight",
+      "description": "`nonce_gen_counter()` offers a deterministic path: a 64-bit counter is written into a 32-byte buffer, the `seckey` is extracted from a `keypair`, and afterwards that `seckey` is securely cleared.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 497,
+          "end": 522
+        }
+      ],
+      "title": "",
+      "id": "30342"
+    },
+    {
+      "type": "highlight",
+      "description": "`sum_pubnonces()` simply adds every participant’s two nonce points into two Jacobian accumulators.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 525,
+          "end": 541
+        }
+      ],
+      "title": "",
+      "id": "30343"
+    },
+    {
+      "type": "highlight",
+      "description": "`nonce_agg()` wraps the helper: it converts the accumulators back to affine coordinates and stores them in the `aggregated-nonce` container.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 544,
+          "end": 557
+        }
+      ],
+      "title": "",
+      "id": "30344"
+    },
+    {
+      "type": "highlight",
+      "description": "A dedicated mid-state tagged `MuSig/noncecoef` isolates the hash that will become the nonce coefficient `b`.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 560,
+          "end": 573
+        }
+      ],
+      "title": "",
+      "id": "30345"
+    },
+    {
+      "type": "highlight",
+      "description": "`compute_noncehash()` feeds both aggregated nonce points, the aggregated key and the message into **SHA-256**, producing the 32-byte `noncehash`.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 575,
+          "end": 589
+        }
+      ],
+      "title": "",
+      "id": "30346"
+    },
+    {
+      "type": "highlight",
+      "description": "`effective_nonce()` turns `r₀` + `b`·`r₁` into a single **Jacobian point** – avoiding an expensive inversion until the very end.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 591,
+          "end": 598
+        }
+      ],
+      "title": "",
+      "id": "30347"
+    },
+    {
+      "type": "highlight",
+      "description": "`nonce_process_internal()` converts noncehash into scalar b, computes the effective nonce R, extracts its x-coordinate, determines parity, and writes both results into local buffers.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 600,
+          "end": 618
+        }
+      ],
+      "title": "",
+      "id": "30348"
+    },
+    {
+      "type": "highlight",
+      "description": "`musig_nonce_process()` loads the key-aggregation cache, decodes the aggregated nonce and calls the helper above.  It then derives the **Schnorr challenge** `e = H(R‖msg‖agg_pk)`.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 620,
+          "end": 642
+        }
+      ],
+      "title": "",
+      "id": "30349"
+    },
+    {
+      "type": "highlight",
+      "description": "If the aggregate key carried an x-only tweak, `e` is multiplied by that tweak (and conditionally negated).  Finally `fin_nonce`, `b`, `e` and the tweak-induced `s_part` are persisted inside the session cache.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 642,
+          "end": 656
+        }
+      ],
+      "title": "",
+      "id": "30350"
+    },
+    {
+      "type": "textOnly",
+      "description": "After `nonce_process` the session object holds:\n- `fin_nonce` (x-coordinate & parity of R)\n- `noncecoef` b\n- `challenge` e\n- `s_part` – the tweak contribution.\nThese cached values are all a signer needs when creating or verifying partial signatures.",
+      "title": "",
+      "id": "30351"
+    }
+  ]
+}

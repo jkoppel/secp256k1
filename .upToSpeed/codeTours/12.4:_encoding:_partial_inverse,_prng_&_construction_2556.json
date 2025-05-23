@@ -1,0 +1,124 @@
+{
+  "title": "12.4: Encoding: Partial Inverse, PRNG & Construction",
+  "id": "J1ZPT7a2hlJwIjtpk2TwnDiTH6ttaZLp0YZ25orqjWU=",
+  "originalId": 2556,
+  "position": 57,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour follows the path from a pure `X`-coordinate to a seemingly random `ElligatorSwift` pair (`u`, `t`). We begin with the **partial inverse** that probes up to eight branches, then see how random inputs are drawn, and finish with the **parity correction** that guarantees round-tripping.",
+      "title": "",
+      "id": "30468"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 169-188 describe the algorithm inside `secp256k1_ellswift_xswiftec_inv_var`.\n* Three bits of the branch parameter `c` control which of the three x-formulas we try and how their sign choices are applied.\n* Each branch may fail; the caller simply iterates over branches until one succeeds.\n* All arithmetic is done **mod p** and kept **constant-time** apart from the unavoidable branch failures.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 168,
+          "end": 188
+        }
+      ],
+      "title": "",
+      "id": "30469"
+    },
+    {
+      "type": "highlight",
+      "description": "For branches where `(c&2)==0` we try the `x₁/x₂` formulas.\n* Lines 205-209 compute `−u−x` and veto the branch early if that number is **already** a curve X; such cases would be handled by the `x₃` path and must not double-encode.\n* This check is cheaper than any square-root or inversion, so it provides a fast early exit.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 198,
+          "end": 210
+        }
+      ],
+      "title": "",
+      "id": "30470"
+    },
+    {
+      "type": "highlight",
+      "description": "Still in the `\n`(c&2)==0` branch group:\n* Lines 212-216 build the denominator `u²+ux+x²` (held as its negation) while postponing the costly field inversion.\n* Lines 235-240 multiply this denominator with `u³+7` and call `secp256k1_fe_is_square_var`.  If the product is non-square the branch is hopeless and aborts immediately.\n* Only when the branch survives the squareness test (line 242) do we pay for the inversion, keeping failed attempts inexpensive.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 211,
+          "end": 247
+        }
+      ],
+      "title": "",
+      "id": "30471"
+    },
+    {
+      "type": "highlight",
+      "description": "Branches where `(c&2)==2` target the **x₃ formula**.\n* `s = x − u` (250-256) must itself be square.\n* Lines 259-269 craft a more involved radicand tied to both `s` and `u³+7`; it too is tested for being a square before `secp256k1_fe_sqrt` is invoked.\n* Extra guards:\n  - bit 0 forbids `r==0` (276-277).\n  - `s==0` is always invalid (279-280).\n* The valid `v = (r/s − u)/2` (282-286) will later mix with constants to form t.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 248,
+          "end": 287
+        }
+      ],
+      "title": "",
+      "id": "30472"
+    },
+    {
+      "type": "highlight",
+      "description": "Final mixing, common to all branches:\n* Line 290 takes the **only** square-root that is guaranteed to exist (`w = √s`).  A **VERIFY** asserts it cannot fail.\n* Lines 294-297 flip the sign of `w` for two of the four sign patterns encoded in `(c&5)`.\n* Lines 298-300 multiply `u` by constant `c3` or `c4` (selected by bit 0) and add the pre-computed `v`.\n* Multiplying by `w` (line 301) yields the candidate `t`; the branch then reports success.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 289,
+          "end": 302
+        }
+      ],
+      "title": "",
+      "id": "30473"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ellswift_prng` turns a frozen SHA-256 state into a counter-based PRNG.\n* Four counter bytes are appended (310-320) and the hash is finalised.\n* The VERIFY in 323-324 checks that writing and finalising crossed **exactly one** 64-byte SHA-256 block, pinning down timing and cache behaviour.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 305,
+          "end": 325
+        }
+      ],
+      "title": "",
+      "id": "30474"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ellswift_xelligatorswift_var` searches for a working (`u`,`t`):\n* A 64-entry buffer of 3-bit branch values (`branch_hash`) is filled with one PRNG call when empty (347-354).\n* Each loop iteration consumes one branch value and obtains a fresh `u` from the PRNG (355-358).\n* The inverse routine is tried (365); if it fails, the loop continues with the next branch/`u`.  Simulations show roughly four iterations on average.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 333,
+          "end": 366
+        }
+      ],
+      "title": "",
+      "id": "30475"
+    },
+    {
+      "type": "highlight",
+      "description": "When an actual group element is provided, `secp256k1_ellswift_elligatorswift_var` adds one final step:\n* After normalising `t`, it flips its sign if its LSB parity differs from the point’s Y parity `(378-381)`.\n* This guarantees that decoding the produced `(u,t)` yields **exactly** the original point.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 375,
+          "end": 382
+        }
+      ],
+      "title": "",
+      "id": "30476"
+    },
+    {
+      "type": "textOnly",
+      "description": "Key observations:\n- Early square tests prune impossible branches before expensive inversions.\n- A single guaranteed square-root (`w`) services all sign combinations; its sign is controlled by branch bits.\n- Random `u` values and branch selectors come from a counter-fed `SHA-256 PRNG` with a proven one-compression data path.\n- A last-moment parity correction aligns the encoding with the point's Y bit, completing a round-tripping, random-looking `ElligatorSwift` encoding.",
+      "title": "",
+      "id": "30477"
+    }
+  ]
+}

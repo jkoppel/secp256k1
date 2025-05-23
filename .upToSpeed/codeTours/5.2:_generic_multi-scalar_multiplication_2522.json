@@ -1,0 +1,176 @@
+{
+  "title": "5.2: Generic multi-scalar multiplication",
+  "id": "UffeAaT10mRsw2yaaPHhvJt510N0dvBOiODqA18mDdc=",
+  "originalId": 2522,
+  "position": 23,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour follows a `scalar-multiplication` request from the `public API` down to the low-level loops that touch individual `group elements`. Along the way you will see why the code chooses the `Straus` or `Pippenger algorithm`, how both rely on `wNAF encodings`, and how several `pre-computation tricks` slash the number of expensive field operations.",
+      "title": "",
+      "id": "30081"
+    },
+    {
+      "type": "highlight",
+      "description": "A call to `secp256k1_ecmult()` allocates three small stack buffers and then immediately hands control to `secp256k1_ecmult_strauss_wnaf()`. This wrapper does no math itself – it only prepares storage for one point and one scalar.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 349,
+          "end": 359
+        }
+      ],
+      "title": "",
+      "id": "30082"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecmult_odd_multiples_table()` builds a table of odd multiples of the input point using two subtle optimisations:\n- Lines 80-88 switch to an isomorphic curve whose `Z` coordinate is 1, so later additions can use fast affine formulas.\n- Lines 105-114 store only `Z`-ratios (array `zr`) instead of full `Z` coordinates.  Every table entry can reconstruct its real `Z` when needed, but none of the loop iterations have to carry it around.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 73,
+          "end": 115
+        }
+      ],
+      "title": "",
+      "id": "30083"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecmult_wnaf()` converts a scalar into windowed Non-Adjacent Form. The loop at 184-207 walks the bits once, writing exactly `len` array positions regardless of the scalar’s value – a constant-time memory access pattern critical for side-channel resistance. The result is sparse: every non-zero digit is odd and separated by at least `w-1` zeros, letting later code skip many additions.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 155,
+          "end": 206
+        }
+      ],
+      "title": "",
+      "id": "30084"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecmult_strauss_wnaf()` is the work-horse for one-point (and small multi-point) multiplication.  It allocates per-point state, a shared Z accumulator and temporary wNAF buffers, then starts preparing each scalar.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 237,
+          "end": 246
+        }
+      ],
+      "title": "",
+      "id": "30085"
+    },
+    {
+      "type": "highlight",
+      "description": "Endomorphism (`λ-split`) optimisation: the incoming scalar `na` is split into two ~128-bit pieces, `na₁` and `na_λ` (258-263). Both halves get their own `wNAF` (262-270), doubling throughput because each piece can reuse the same pre-computed point table.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 258,
+          "end": 271
+        }
+      ],
+      "title": "",
+      "id": "30086"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 287-300 call the `odd-multiples helper` for every input point, filling a contiguous table of affine `X`/`Y` pairs.  A second pass multiplies all stored `X` coordinates by the curve constant **β** (300-302) – those **β**-scaled versions will be used for the **λ** half of each scalar.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 287,
+          "end": 300
+        }
+      ],
+      "title": "",
+      "id": "30087"
+    },
+    {
+      "type": "highlight",
+      "description": "If the caller provided a base-point scalar `ng`, it too is split (304-310) into `ng₁` and `ng₁₂₈`. Instead of building a new table, the algorithm will later fetch odd multiples from two read-only pre-computed tables: `secp256k1_pre_g` and `secp256k1_pre_g_128`.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 304,
+          "end": 316
+        }
+      ],
+      "title": "",
+      "id": "30088"
+    },
+    {
+      "type": "highlight",
+      "description": "The Straus main loop walks the bits top-down. Each iteration doubles the accumulator (322-324) and then\t6depending on the `wNAF` digits available at this bit position\t6adds up to four per-point multiples (325-332) plus up to two base-point multiples (335-340, just below the snippet). Because `wNAF` is sparse, many bit positions skip most of these adds.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 321,
+          "end": 333
+        }
+      ],
+      "title": "",
+      "id": "30089"
+    },
+    {
+      "type": "highlight",
+      "description": "Pippenger begins by choosing a bucket window with `secp256k1_pippenger_bucket_window(n)`. The window grows with n so that the total work **O(2^w + n/w)** stays close to optimal; it never exceeds 12.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 581,
+          "end": 605
+        }
+      ],
+      "title": "",
+      "id": "30090"
+    },
+    {
+      "type": "highlight",
+      "description": "Inside `secp256k1_ecmult_pippenger_wnaf()`:\n- Buckets are cleared (523-527).\n- Every live point deposits itself into the bucket that matches its wNAF digit (528-549).\n- A second sweep (565-573) folds buckets into a running sum with one addition per bucket, effectively computing 1·bucket₀ + 3·bucket₁ + 5·bucket₂ … while paying only two additions per bucket. This sharing makes **Pippenger** faster once n ≳ 88.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 521,
+          "end": 574
+        }
+      ],
+      "title": "",
+      "id": "30091"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecmult_multi_var()` orchestrates the strategy choice.\n1. With no scratch space it falls back to simple **double-and-add** (821-823).\n2. Otherwise it asks how many points fit into the scratch (829-835).\n3. If each batch holds ≥ 88 points **Pippenger** wins; otherwise **Straus** is chosen (834-838).",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 806,
+          "end": 840
+        }
+      ],
+      "title": "",
+      "id": "30092"
+    },
+    {
+      "type": "highlight",
+      "description": "The selected routine is then run over one or more batches (840-849).  Each batch returns a partial sum which is accumulated into the final Jacobian result.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 840,
+          "end": 850
+        }
+      ],
+      "title": "",
+      "id": "30093"
+    },
+    {
+      "type": "textOnly",
+      "description": "You can now open any call site of `secp256k1_ecmult()` or `secp256k1_ecmult_multi_var()` and confidently trace the flow: thin wrapper → **Straus** or **Pippenger** → **wNAF tables/buckets** → **addition loops** – understanding why each optimisation appears and how it affects performance.",
+      "title": "",
+      "id": "30094"
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "title": "14.4: Nonce & Session object formats",
+  "id": "SgudrqqqZO2KeVCHnnCABlx/NYztfjhfRTlgUcz3hC0=",
+  "originalId": 2565,
+  "position": 66,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This walkthrough follows every object that a signer may cache during a **MuSig2** run, showing how the implementation turns it into bytes, how those bytes are checked on load, and how secrets are wiped so they can never be reused.",
+      "title": "",
+      "id": "30322"
+    },
+    {
+      "type": "highlight",
+      "description": "Single group elements are encoded with these helpers.  **Lines 25-29** output 33 zero-bytes when the point is at infinity, giving callers an unambiguous marker.  **Lines 30-33** or **49-53** perform compressed **SEC1** (x-coordinate plus parity) conversion and subgroup checks.  They are reused wherever nonces need point-level flexibility.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 53
+        }
+      ],
+      "title": "",
+      "id": "30323"
+    },
+    {
+      "type": "highlight",
+      "description": "A secret nonce cache begins with `0x22 0e dc f1` (58) so future loads can immediately detect type confusion.  It then stores the two scalar halves `k₀||k₁` (59-60) and finally the associated public nonce point (61-62).",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 55,
+          "end": 63
+        }
+      ],
+      "title": "",
+      "id": "30324"
+    },
+    {
+      "type": "highlight",
+      "description": "On load the same magic is demanded (67).  A constant-time check ensures the `64-byte scalar area` is not all zero (69-72), closing a loophole where an attacker could erase only the magic.  Lines 73-76 rebuild `k₀`, `k₁` and the point for further use.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 64,
+          "end": 77
+        }
+      ],
+      "title": "",
+      "id": "30325"
+    },
+    {
+      "type": "highlight",
+      "description": "`secnonce_invalidate` (81) zeroises the entire buffer under constant-time control, then declassifies just the `magic` and `public key` (86-87).  This makes the nonce unusable while revealing no secret data.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 80,
+          "end": 88
+        }
+      ],
+      "title": "",
+      "id": "30326"
+    },
+    {
+      "type": "highlight",
+      "description": "A public nonce is two non-infinity points tagged with `0xf5 7a 3d a0 (96)`.  `save` (96-100) writes each point in 64-byte uncompressed form; `load` (107-111) re-parses after verifying the tag.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 90,
+          "end": 112
+        }
+      ],
+      "title": "",
+      "id": "30327"
+    },
+    {
+      "type": "highlight",
+      "description": "The aggregate nonce uses `0xa8 b7 e4 67 (118)` and `ge_to_bytes_ext` / `from_bytes_ext` so that the second layer may legitimately be **the point at infinity**.  The same 64-byte slots are written (`119-130`) and read (`127-130`).",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 114,
+          "end": 132
+        }
+      ],
+      "title": "",
+      "id": "30328"
+    },
+    {
+      "type": "highlight",
+      "description": "A **session cache** packs everything needed after **nonce-processing**: parity of the final **nonce** (149), its **x-coordinate R** (151-152), the **nonce coefficient b** (153-154), the **Schnorr challenge e** (155-156) and an **s_part term** that accounts for tweaks (157-158).",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 144,
+          "end": 158
+        }
+      ],
+      "title": "",
+      "id": "30329"
+    },
+    {
+      "type": "highlight",
+      "description": "`session_load` (163-173) restores exactly the same data, so later signing and verification code can work without recomputing expensive hash inputs.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 160,
+          "end": 174
+        }
+      ],
+      "title": "",
+      "id": "30330"
+    },
+    {
+      "type": "highlight",
+      "description": "**A partial signature object** is the simplest of all: `magic 0xeb fb 1a 32 (180)` plus a `32-byte scalar s (181-182)`.  `load (185-191)` enforces the tag and refuses high-magnitude values, guaranteeing the scalar lives inside the curve order.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 177,
+          "end": 192
+        }
+      ],
+      "title": "",
+      "id": "30331"
+    },
+    {
+      "type": "textOnly",
+      "description": "Every cacheable object carries a unique magic prefix, is validated on load, and\u0014where secrets are present\u001d is cleared in constant time after use.  Together these patterns prevent nonce reuse, cross-type confusion, or accidental leakage while still allowing efficient multi-call workflows.",
+      "title": "",
+      "id": "30332"
+    }
+  ]
+}

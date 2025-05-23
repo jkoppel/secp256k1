@@ -1,0 +1,137 @@
+{
+  "title": "7.4: Context Glue & Single Translation Unit",
+  "id": "BrgA32aVNVLO+VfXNwasA7hkBvxgTaU0oSxchgvBMQA=",
+  "originalId": 2532,
+  "position": 33,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "We trace the life-cycle of `libsecp256k1`’s **context** and show how every back-end implementation is pulled into one compilation unit, how the **opaque pointer** maps to a **real struct**, how **generator-multiplication tables** are built & re-blinded, and how the **defensive argument checks** delegate to **user-replaceable callbacks**.",
+      "title": "",
+      "id": "30277"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 27-40 form a wall of **#include \"*_impl.h\"** directives. Every low-level back-end (field, scalar, group, ecmult, \u0002026) is compiled straight into **this single `.c` file**, giving the compiler whole-program visibility and inlining opportunities.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 40
+        }
+      ],
+      "title": "",
+      "id": "30278"
+    },
+    {
+      "type": "highlight",
+      "description": "The real layout behind the public `secp256k1_context*` pointer: one generator-mult context, two callbacks, and a declassify flag.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 59,
+          "end": 66
+        }
+      ],
+      "title": "",
+      "id": "30279"
+    },
+    {
+      "type": "highlight",
+      "description": "In the public header the same identifier is only a **forward declaration**, keeping size and fields private while still letting applications pass the pointer around.",
+      "file": "include/secp256k1.h",
+      "highlight": [
+        {
+          "start": 48,
+          "end": 52
+        }
+      ],
+      "title": "",
+      "id": "30280"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_context_preallocated_create` wires the default callbacks, builds `ecmult_gen_ctx`, and stores the **declassify flag** – this is where a fresh context gains its generator tables.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 118,
+          "end": 138
+        }
+      ],
+      "title": "",
+      "id": "30281"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecmult_gen_context_build` is a thin wrapper that just calls the blinding helper and marks the context as built.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 17,
+          "end": 22
+        }
+      ],
+      "title": "",
+      "id": "30282"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecmult_gen_blind`\n- derives a projective-rescale factor, a scalar offset and a matching `ge_offset` from the seed (or resets them when the seed is `NULL`)\n- stores them back into the context so every future scalar-mult uses fresh blinding",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 284,
+          "end": 331
+        }
+      ],
+      "title": "",
+      "id": "30283"
+    },
+    {
+      "type": "highlight",
+      "description": "The public **API** `secp256k1_context_randomize` simply re-invokes the same blinder, letting callers refresh protection against side-channel leakage at any time.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 747,
+          "end": 754
+        }
+      ],
+      "title": "",
+      "id": "30284"
+    },
+    {
+      "type": "highlight",
+      "description": "Argument-checking macros evaluate the condition, then dispatch to the context’s `illegal_callback` before aborting the current API call.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 45,
+          "end": 57
+        }
+      ],
+      "title": "",
+      "id": "30285"
+    },
+    {
+      "type": "highlight",
+      "description": "Default callback functions print to stderr and `abort()`.  Constant instances are assigned during context construction but can be replaced by the application.",
+      "file": "src/util.h",
+      "highlight": [
+        {
+          "start": 96,
+          "end": 104
+        }
+      ],
+      "title": "",
+      "id": "30286"
+    },
+    {
+      "type": "textOnly",
+      "description": "Put together:\n1. Every private back-end is included into `secp256k1.c`, enforcing a single translation unit.\n2. The opaque context pointer maps directly to the struct we inspected.\n3. Context creation builds & blinds generator tables; `context_randomize` re-blinds them.\n4. All public APIs validate inputs with `ARG_CHECK`, which routes failures to the callbacks stored in that same struct.\nWith these connections you can follow any public call—from the API header down to concrete math code—through the context.",
+      "title": "",
+      "id": "30287"
+    }
+  ]
+}

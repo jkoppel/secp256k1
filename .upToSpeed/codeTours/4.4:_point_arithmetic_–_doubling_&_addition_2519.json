@@ -1,0 +1,163 @@
+{
+  "title": "4.4: Point Arithmetic – Doubling & Addition",
+  "id": "8tPQAKvdBHDMtgoI5+xyxideBBrIXN5VbZaUYG4XIeE=",
+  "originalId": 2519,
+  "position": 20,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This walkthrough zooms in on the few primitives that every higher-level `secp256k1` **scalar-multiplication** and verification path eventually calls: one **constant-time point-double**, three **flavours of addition**, and the **equality helpers** that test their results.",
+      "title": "",
+      "id": "30023"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_gej_double` starts with an operation budget (line 461) and the algebraic formula being implemented (lines 467-473).  Notice how the formula is written exactly for Jacobian coordinates; no branches are needed for special cases.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 460,
+          "end": 474
+        }
+      ],
+      "title": "",
+      "id": "30024"
+    },
+    {
+      "type": "highlight",
+      "description": "Implementation highlights:\n- 476 builds `Z3` = `Y1`·`Z1` so the result remains on the same **projective line**.\n- 478-485 derive `X3` by squaring `L` (line 483) and twice adding `T` (lines 484-485).\n- 486-490 finish `Y3` and line 490 negates the sum, matching the sign in the formula.\nAll work is on temporaries, so `r` may alias `a` without risk.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 475,
+          "end": 493
+        }
+      ],
+      "title": "",
+      "id": "30025"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_gej_double_var` layers variable-time conveniences over the **constant-time** core:\n- 508-514 early-outs when the input is infinity and, if requested, sets `rzr` to 1.\n- 516-520 copies `Y1` into `rzr` (weak-normalised) so callers can reuse it as a denominator.\n- 521 delegates to the compact **constant-time** routine above.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 495,
+          "end": 523
+        }
+      ],
+      "title": "",
+      "id": "30026"
+    },
+    {
+      "type": "highlight",
+      "description": "First half of `secp256k1_gej_add_var` handles all exceptional inputs:\n- 532-543 copy-through rules when either operand is infinity, preserving `rzr=1` when only `b` is infinity.\n- 550-553 detect `h == 0`.  If `i == 0` as well the points coincide and we recurse to the (variable-time) doubler; otherwise the points are negatives and we return the point at infinity (`rzr` set to 0).",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 526,
+          "end": 553
+        }
+      ],
+      "title": "",
+      "id": "30027"
+    },
+    {
+      "type": "highlight",
+      "description": "Main arithmetic path of `gej_add_var`:\n- 566-571 compute `Z3` and optionally expose `h·Z2` via `rzr` (line 568).\n- 572-580 set up `h²`, `h³` and finish `X3 = i² + h³ + 2·u1·h²`.\n- 582-586 form `Y3 = (X3+T)·i + h³·S1`, matching the **standard Jacobian-add formula**.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 545,
+          "end": 588
+        }
+      ],
+      "title": "",
+      "id": "30028"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_gej_add_ge`’s extensive comment introduces the unified **Brier–Joye addition/doubling formula** expressed in projective variables (lines 733-751) and walks through the four degenerate cases that must be masked away without branching (lines 754-780).",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 724,
+          "end": 781
+        }
+      ],
+      "title": "",
+      "id": "30029"
+    },
+    {
+      "type": "highlight",
+      "description": "**Implementation of the constant-time unified adder:**\n\n- Lines 797-806: Compute `rr_alt` / `m_alt` – the alternate λ used when `M` would be 0\n- Lines 807-808: `cmov` to the alternate terms when the `degenerate flag` is set, avoiding a branch\n- Lines 835-839: `cmov` in (`b.x`,`b.y`,1) if `a` was infinity, still branch-free\n- Line 856: Finalizes `r->infinity` by checking if the computed `z` normalizes to zero",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 783,
+          "end": 857
+        }
+      ],
+      "title": "",
+      "id": "30030"
+    },
+    {
+      "type": "highlight",
+      "description": "`gej_add_ge_var` is a lighter, variable-time mix-type adder. Because the affine input has `z=1`:\n- only 8 field muls and 3 sqrs are needed (comment `line 591`).\n- `h` (`line 615`) and its square/cube drive both `X3` and `Y3` exactly like in `gej_add_var`, with the same optional rzr export (`line 630`).",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 590,
+          "end": 651
+        }
+      ],
+      "title": "",
+      "id": "30031"
+    },
+    {
+      "type": "highlight",
+      "description": "`gej_add_zinv_var` assumes the caller already holds `1/Z` for the affine point.\nLines 676-684 pre-scale `a->z` once so the rest of the code can treat `b` as having `z=1`; this eliminates a full field inversion compared to `gej_add_var`.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 653,
+          "end": 721
+        }
+      ],
+      "title": "",
+      "id": "30032"
+    },
+    {
+      "type": "highlight",
+      "description": "`gej_eq_var` proves equality by negating a (line 383) and reusing `gej_add_var`; if the sum reaches infinity (line 385) the points were equal.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 378,
+          "end": 386
+        }
+      ],
+      "title": "",
+      "id": "30033"
+    },
+    {
+      "type": "highlight",
+      "description": "`eq_x_var` compares an affine x to a Jacobian point by **cross-multiplying** (`line 423`) and relying on `fe_equal` – **no inversions**, yet still **constant-time**.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 417,
+          "end": 425
+        }
+      ],
+      "title": "",
+      "id": "30034"
+    },
+    {
+      "type": "textOnly",
+      "description": "Taken together, these tightly-coupled helpers give the `library` every group operation it needs — **constant-time doubles** and **unified adds** for **side-channel safety**, **variable-time variants** for speed, and **equality checks** that funnel back into the same primitives.",
+      "title": "",
+      "id": "30035"
+    }
+  ]
+}

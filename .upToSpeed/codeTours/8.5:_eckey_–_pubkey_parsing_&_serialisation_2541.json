@@ -1,0 +1,85 @@
+{
+  "title": "8.5: ECKEY – Pubkey Parsing & Serialisation",
+  "id": "c0PIpIsuE0iCtIjLSjcldhZM6U8rgSNohXJG3N7Nn1Q=",
+  "originalId": 2541,
+  "position": 42,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour follows a public key as it moves between raw bytes and the `library`’s internal point representation, highlighting the checks that make the encoding canonical and safe.",
+      "title": "",
+      "id": "30270"
+    },
+    {
+      "type": "highlight",
+      "description": "The first branch (19-21) recognises 33-byte compressed encodings. After the tag/length test it:\n- builds a field element from the 32-byte `X`, rejecting `X ≥ p` (`fe_set_b32_limit`).\n- reconstructs `Y` with `ge_set_xo_var`, which also enforces the `tag`'s odd/even bit.\nTogether these two calls guarantee that only valid, on-curve points with the requested parity are accepted.",
+      "file": "src/eckey_impl.h",
+      "highlight": [
+        {
+          "start": 18,
+          "end": 21
+        }
+      ],
+      "title": "",
+      "id": "30271"
+    },
+    {
+      "type": "highlight",
+      "description": "Inside `ge_set_xo_var` the library squares `X`, forms `X³ + 7`, takes a square-root (357-358) and flips the root if its parity does not match the **‘odd’ flag** (359-360).  If no square-root exists the function returns `0` – exactly the case when `X` is not on the curve.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 347,
+          "end": 361
+        }
+      ],
+      "title": "",
+      "id": "30272"
+    },
+    {
+      "type": "highlight",
+      "description": "The second branch handles 65-byte encodings:\n- Lines 24-27 parse both coordinates, each limited to `< p`.\n- `ge_set_xy` stores them in a group element.\n- For hybrid tags (`0x06/0x07`) lines 28-30 demand that the tag's parity bit matches `Y`.\n- `ge_is_valid_var` (32) enforces the curve equation before returning success.",
+      "file": "src/eckey_impl.h",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 32
+        }
+      ],
+      "title": "",
+      "id": "30273"
+    },
+    {
+      "type": "highlight",
+      "description": "`ge_is_valid_var` squares `Y` and compares it with `X³ + 7` (454-457).  A mismatch causes the earlier `parse()` call to fail, so malformed or off-curve coordinates are never accepted.",
+      "file": "src/group_impl.h",
+      "highlight": [
+        {
+          "start": 446,
+          "end": 458
+        }
+      ],
+      "title": "",
+      "id": "30274"
+    },
+    {
+      "type": "highlight",
+      "description": "Serialisation is the exact mirror:\n- Infinity points are rejected (41-43).\n- X and Y are first normalised (44-45) to ensure a unique representation.\n- X is written after a **1-byte** tag (46-47).\n- **Compressed output** (48-50) chooses `0x02`/`0x03` from Y's parity and sets length = 33.\n- **Uncompressed output** (51-54) writes tag `0x04`, appends Y and sets length = 65.\nThe function always returns `1`, so every internal point is given a canonical byte string.",
+      "file": "src/eckey_impl.h",
+      "highlight": [
+        {
+          "start": 38,
+          "end": 55
+        }
+      ],
+      "title": "",
+      "id": "30275"
+    },
+    {
+      "type": "textOnly",
+      "description": "Putting it all together:\n- Every accepted input is a real, finite `secp256k1` point (square-root succeeds & `y² = x³+7`).\n- Hybrid encodings are cross-checked for parity consistency, preventing malleability.\n- Serialisation emits the shortest allowed form with correct tags and normalised coordinates, so `decode→encode` is deterministic and canonical.",
+      "title": "",
+      "id": "30276"
+    }
+  ]
+}

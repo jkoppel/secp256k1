@@ -1,0 +1,150 @@
+{
+  "title": "9.1: module-ecdh: Overview",
+  "id": "rm7Jo9qOaUC0r/W6TNaV9GerihBZ0HUzC0p/R55qMMw=",
+  "originalId": 2543,
+  "position": 44,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Let’s map the `ECDH` module from its public façade down to the constant-time math it relies on.  Watch how interface and implementation live in separate files, which symbols are exported, and how a caller’s `secp256k1_ecdh()` request threads through the layers.",
+      "title": "",
+      "id": "30637"
+    },
+    {
+      "type": "highlight",
+      "description": "The header begins with a guard (lines 1-3) and immediately includes `secp256k1.h` (line 4). This places everything in this file on the library’s **public API surface**.",
+      "file": "include/secp256k1_ecdh.h",
+      "highlight": [
+        {
+          "start": 1,
+          "end": 9
+        }
+      ],
+      "title": "",
+      "id": "30638"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 10-26 house a detailed doc-comment and the typedef `secp256k1_ecdh_hash_function`. Any routine matching this **signature** can be plugged in by callers to post-process the shared point.",
+      "file": "include/secp256k1_ecdh.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 26
+        }
+      ],
+      "title": "",
+      "id": "30639"
+    },
+    {
+      "type": "highlight",
+      "description": "Two exported constants expose built-in hash callbacks: `secp256k1_ecdh_hash_function_sha256` and `secp256k1_ecdh_hash_function_default` (lines 30-34).  They will later resolve to the same helper.",
+      "file": "include/secp256k1_ecdh.h",
+      "highlight": [
+        {
+          "start": 28,
+          "end": 35
+        }
+      ],
+      "title": "",
+      "id": "30640"
+    },
+    {
+      "type": "highlight",
+      "description": "The next block documents `secp256k1_ecdh()` itself.  Note its constant-time promise and that it succeeds only when both the scalar is valid and the supplied hash function returns 1.",
+      "file": "include/secp256k1_ecdh.h",
+      "highlight": [
+        {
+          "start": 36,
+          "end": 49
+        }
+      ],
+      "title": "",
+      "id": "30641"
+    },
+    {
+      "type": "highlight",
+      "description": "Prototype inspection: `six parameters`—`context`, `output buffer`, `public key`, `secret scalar`, `optional hash callback`, and `optional user data`—complete the **public contract**.",
+      "file": "include/secp256k1_ecdh.h",
+      "highlight": [
+        {
+          "start": 50,
+          "end": 57
+        }
+      ],
+      "title": "",
+      "id": "30642"
+    },
+    {
+      "type": "highlight",
+      "description": "Implementation lives in `src/modules/ecdh/main_impl.h`, **#included** into the monolithic C unit.  It pulls in `ecmult_const_impl.h` (line 11) for the constant-time scalar multiplication engine.",
+      "file": "src/modules/ecdh/main_impl.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "30643"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 13-25 implement `ecdh_hash_function_sha256()`. It serialises the point as a compressed key (notice the version byte on line 14) and hashes the result with the library’s internal `SHA-256`.",
+      "file": "src/modules/ecdh/main_impl.h",
+      "highlight": [
+        {
+          "start": 13,
+          "end": 25
+        }
+      ],
+      "title": "",
+      "id": "30644"
+    },
+    {
+      "type": "highlight",
+      "description": "The two public `hash-function` symbols are mere aliases (`lines 27-28`) that point at the helper we just saw—no extra indirection, no surprises.",
+      "file": "src/modules/ecdh/main_impl.h",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 29
+        }
+      ],
+      "title": "",
+      "id": "30645"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 30-38 mark the start of `secp256k1_ecdh()`’s body.  Argument checks and local scratch variables confirm that the public entry-point is implemented right here.",
+      "file": "src/modules/ecdh/main_impl.h",
+      "highlight": [
+        {
+          "start": 30,
+          "end": 38
+        }
+      ],
+      "title": "",
+      "id": "30646"
+    },
+    {
+      "type": "highlight",
+      "description": "Core flow:\n- `secp256k1_ecmult_const()` performs constant-time scalar multiplication.\n- The **Jacobian result** is converted, normalised, and its coordinates extracted (lines 55-62).\n- Chosen hash callback digests the coordinates (line 63).\n- Final return (line 71) combines the hash result and **overflow flag**, finishing the journey caller → `secp256k1_ecdh()` → `secp256k1_ecmult_const()` → `hash callback`.",
+      "file": "src/modules/ecdh/main_impl.h",
+      "highlight": [
+        {
+          "start": 54,
+          "end": 71
+        }
+      ],
+      "title": "",
+      "id": "30647"
+    },
+    {
+      "type": "textOnly",
+      "description": "**Public interface recap:** the module exports four symbols—**typedef** `secp256k1_ecdh_hash_function`, **constants** `secp256k1_ecdh_hash_function_sha256` and `secp256k1_ecdh_hash_function_default`, and the **function** `secp256k1_ecdh()`. The header cleanly defines their contract; `main_impl.h` fulfils it while delegating heavy lifting to the constant-time math layer.",
+      "title": "",
+      "id": "30648"
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "title": "2.3: 10×26 Backend – 26-bit Limb Representation",
+  "id": "LS0idniZ5kAdjO9T1+bDIO4JJhTYD12Z/G20BEjNP9s=",
+  "originalId": 2503,
+  "position": 8,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour explains how the `32-bit backend` represents, normalises, multiplies and moves field elements using 10 × 26-bit **limbs**.",
+      "title": "",
+      "id": "29916"
+    },
+    {
+      "type": "highlight",
+      "description": "The structure stores ten `26-bit` limbs and documents the *magnitude* bookkeeping that lets limbs temporarily exceed `2²⁶` while tracking reduction needs.",
+      "file": "src/field_10x26.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 33
+        }
+      ],
+      "title": "",
+      "id": "29917"
+    },
+    {
+      "type": "highlight",
+      "description": "`SECP256K1_FE_CONST_INNER` unpacks eight 32-bit words into overlapping 26-bit limbs; every **right-shift** is matched by a **left-shift** that packs bits of the next word.",
+      "file": "src/field_10x26.h",
+      "highlight": [
+        {
+          "start": 37,
+          "end": 48
+        }
+      ],
+      "title": "",
+      "id": "29918"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_fe_impl_normalize` propagates carries from limb 0 through 9, masking each to 26 bits and building the AND-reduction witness `m`.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 53,
+          "end": 71
+        }
+      ],
+      "title": "",
+      "id": "29919"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 73-80 decide if one more subtraction of `p` is needed; the subtraction is always executed but its effect is masked by `x` for **constant-time behaviour**.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 73,
+          "end": 80
+        }
+      ],
+      "title": "",
+      "id": "29920"
+    },
+    {
+      "type": "highlight",
+      "description": "`normalize_weak` performs the same carry pass but omits the final conditional subtraction, producing a value with magnitude ≤ 1 that may still be ≥ p.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 102,
+          "end": 121
+        }
+      ],
+      "title": "",
+      "id": "29921"
+    },
+    {
+      "type": "highlight",
+      "description": "`normalize_var` is variable-time: it exits early if `x==0`, trading timing leakage for speed in non-critical code paths.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 128,
+          "end": 147
+        }
+      ],
+      "title": "",
+      "id": "29922"
+    },
+    {
+      "type": "highlight",
+      "description": "`mul_inner` starts by **VERIFY_BITS** checks and comments (428-432) that explain the 52-bit comb representation and the reduction constants `R0`/`R1`.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 399,
+          "end": 433
+        }
+      ],
+      "title": "",
+      "id": "29923"
+    },
+    {
+      "type": "highlight",
+      "description": "First output limbs: each 26-bit chunk is masked with `M` and the spilled carry is folded back in using `R0`/`R1`, keeping 64-bit temporaries bounded.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 445,
+          "end": 474
+        }
+      ],
+      "title": "",
+      "id": "29924"
+    },
+    {
+      "type": "highlight",
+      "description": "The tail writes limbs `r[0..9]`; notice the special `22-bit` mask for `r[9]` and the final carry cascade that guarantees canonical ranges.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 675,
+          "end": 729
+        }
+      ],
+      "title": "",
+      "id": "29925"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_fe_impl_cmov` turns the flag into a full-word mask and blends each limb with bitwise logic, ensuring constant-time selection.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 1014,
+          "end": 1029
+        }
+      ],
+      "title": "",
+      "id": "29926"
+    },
+    {
+      "type": "highlight",
+      "description": "An optional `USE_EXTERNAL_ASM` block allows **ARM** or other platforms to supply handwritten mul/sqr kernels.",
+      "file": "src/field_10x26_impl.h",
+      "highlight": [
+        {
+          "start": 391,
+          "end": 397
+        }
+      ],
+      "title": "",
+      "id": "29927"
+    },
+    {
+      "type": "textOnly",
+      "description": "Compared to the 64-bit `5 × 52` backend: `10 × 26` uses narrower limbs (fits 32-bit multiplies), propagates carries twice as often, and uses a 22-bit top limb.  The same `R0/R1` constants and `comb` schedule are reused, but reduction constants differ slightly.",
+      "title": "",
+      "id": "29928"
+    }
+  ]
+}

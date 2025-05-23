@@ -1,0 +1,189 @@
+{
+  "title": "6.2: SHA-256, HMAC & RFC-6979 PRNG",
+  "id": "noZxi30KPdTLXFlmPw5GvQlqgNRKdkYKPZoHuRDWAAo=",
+  "originalId": 2527,
+  "position": 28,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "We will walk through the constant-time hashing stack used by `libsecp256k1` – starting at raw `SHA-256`, adding `HMAC`, and finishing with the `RFC-6979` deterministic nonce generator.",
+      "title": "",
+      "id": "30142"
+    },
+    {
+      "type": "highlight",
+      "description": "The struct is a minimal in-memory image of the algorithm's state:\n- `s[8]` – working variables A..H (32-bit each)\n- `buf` – one 512-bit message block\n- `bytes` – total input length so far (used for the length footer)",
+      "file": "src/hash.h",
+      "highlight": [
+        {
+          "start": 13,
+          "end": 17
+        }
+      ],
+      "title": "",
+      "id": "30143"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_sha256_initialize` hard-codes the IV constants from FIPS-180-4.  They are written straight into the struct – no table look-ups and no branches, which keeps the function constant-time and cache-friendly.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 31,
+          "end": 41
+        }
+      ],
+      "title": "",
+      "id": "30144"
+    },
+    {
+      "type": "highlight",
+      "description": "`Round` is a one-shot macro for a `SHA-256` compression round. Because it’s inlined, there is no loop counter or data-dependent branching – vital for constant-time behaviour.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 29
+        }
+      ],
+      "title": "",
+      "id": "30145"
+    },
+    {
+      "type": "highlight",
+      "description": "The `transform` function spells out the first 16 rounds explicitly. Each **Round** consumes a big-endian word `w0-w15` taken directly from the `input buffer`, mirroring the first phase of the specification.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 48,
+          "end": 63
+        }
+      ],
+      "title": "",
+      "id": "30146"
+    },
+    {
+      "type": "highlight",
+      "description": "From round 17 onward the same `w-variables` are recycled: they are updated in place with `σ0/σ1` and previous values. This avoids the `64-word schedule array` and keeps memory traffic low while still following the exact recurrence from the **spec**.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 65,
+          "end": 73
+        }
+      ],
+      "title": "",
+      "id": "30147"
+    },
+    {
+      "type": "highlight",
+      "description": "`sha256_write` streams input in constant 64-byte chunks.  `bufsize = bytes & 0x3F` tells how many bytes are already buffered.  As soon as the buffer fills, a transform is triggered; partial tails are simply copied in.  No branches depend on data contents.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 126,
+          "end": 143
+        }
+      ],
+      "title": "",
+      "id": "30148"
+    },
+    {
+      "type": "highlight",
+      "description": "`sha256_finalize` performs padding by calling `sha256_write` twice: once for the `0x80` … `0x00` pad, once for the 64-bit length. Reusing the write path keeps the timing identical to normal input processing.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 145,
+          "end": 159
+        }
+      ],
+      "title": "",
+      "id": "30149"
+    },
+    {
+      "type": "highlight",
+      "description": "`sha256_initialize_tagged` implements the **BIP-340** \"tagged hash\" scheme. It hashes the tag once, finalises, then starts a fresh hash with `SHA256(tag)`||`SHA256(tag)` pre-pended – providing domain separation at no extra run-time cost.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 163,
+          "end": 172
+        }
+      ],
+      "title": "",
+      "id": "30150"
+    },
+    {
+      "type": "highlight",
+      "description": "`hmac_sha256_initialize` follows **RFC-2104**:  If the key is ≤64 bytes it is zero-padded; otherwise it is shortened with a single SHA-256.  The key is then XORed with `0x5c` for the outer digest and with `0x36` for the inner digest.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 178,
+          "end": 205
+        }
+      ],
+      "title": "",
+      "id": "30151"
+    },
+    {
+      "type": "highlight",
+      "description": "Writing simply feeds data to the **inner hash**.  **Finalisation** closes the **inner hash**, injects its 32-byte result into the **outer hash**, clears the **temporary buffer**, and outputs the final **MAC**.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 206,
+          "end": 216
+        }
+      ],
+      "title": "",
+      "id": "30152"
+    },
+    {
+      "type": "highlight",
+      "description": "`RFC-6979` **initialise mirrors section 3.2 (steps b–f).**  `V` starts at `0x01`, `K` at `0x00`, then two `HMAC` invocations fold in the secret key material.  Comments label each paragraph from the RFC for easy cross-checking.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 222,
+          "end": 249
+        }
+      ],
+      "title": "",
+      "id": "30153"
+    },
+    {
+      "type": "highlight",
+      "description": "`generate` implements step `3.2.h`:  `V` is repeatedly `HMAC`-ed until the caller’s output buffer is full.  If the caller later rejects the `nonce` and asks again, `retry` is set and the `reseed path` (lines 255-264) is taken next time.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 252,
+          "end": 281
+        }
+      ],
+      "title": "",
+      "id": "30154"
+    },
+    {
+      "type": "highlight",
+      "description": "Every layer supplies a clear helper that zeros the struct with `secp256k1_memclear`. Similar tiny helpers exist for `HMAC` (218-220) and the `PRNG` (287-289), ensuring no sensitive material lingers after use.",
+      "file": "src/hash_impl.h",
+      "highlight": [
+        {
+          "start": 174,
+          "end": 176
+        }
+      ],
+      "title": "",
+      "id": "30155"
+    },
+    {
+      "type": "textOnly",
+      "description": "You have now seen data flow from `raw blocks` → `constant-time SHA-256` → `HMAC construction` → `deterministic nonce stream`, and how the code eliminates timing variance, minimises memory exposure, and provides explicit zeroisation.",
+      "title": "",
+      "id": "30156"
+    }
+  ]
+}

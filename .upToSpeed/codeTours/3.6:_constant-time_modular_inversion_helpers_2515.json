@@ -1,0 +1,111 @@
+{
+  "title": "3.6: Constant-Time Modular Inversion Helpers",
+  "id": "e2Hf6+vsg/AH49yjDByplBcOBBJa+Tc7LjWAltc3UyA=",
+  "originalId": 2515,
+  "position": 16,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "The `modular-inverse` code implements **Bernstein–Yang divsteps**: repeatedly build a 2 × 2 transition matrix for a fixed number of \"divsteps\", apply it to `(f,g)` and to the accumulating pair `(d,e)`, and finally normalise the result. Two limb encodings exist:\n- nine signed-`30`-bit limbs (portable `32`-bit arithmetic).\n- five signed-`62`-bit limbs (needs `128`-bit wide multiplications but halves the outer loop count).\nThe next steps examine each path, **constant- vs variable-time entry points**, **Jacobi helpers**, and how ordinary callers trigger the machinery.",
+      "title": "",
+      "id": "30061"
+    },
+    {
+      "type": "highlight",
+      "description": "`signed30`: nine `int32_t` limbs (15-17) cover 256 bits.  The public API (33-36) offers a variable-time version and a constant-time twin that **\"is constant time in x (not in the modulus)\"** – execution depends only on the value being inverted, never on secret branches of the modulus.",
+      "file": "src/modinv32.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 36
+        }
+      ],
+      "title": "",
+      "id": "30062"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_modinv32_divsteps_30` builds a transition matrix for 30 divsteps.  Inside the loop (191-219) bit-masking replaces branches: conditional add/negate of g (195-207), shift-and-double (217-219), while zeta tracks progress (210-213).  After 30 iterations the matrix (224-227) has determinant 2^30 (231-232).",
+      "file": "src/modinv32_impl.h",
+      "highlight": [
+        {
+          "start": 179,
+          "end": 222
+        }
+      ],
+      "title": "",
+      "id": "30063"
+    },
+    {
+      "type": "highlight",
+      "description": "The constant-time driver repeats that `30-step kernel` exactly twenty times (541-542) – `600 divsteps`, enough for any 256-bit modulus.  Each round updates `(d,e)` (547) and `(f,g)` (554).  Because the loop count and every conditional depend only on public information, timing leaks nothing about `x` except whether it is zero.",
+      "file": "src/modinv32_impl.h",
+      "highlight": [
+        {
+          "start": 531,
+          "end": 560
+        }
+      ],
+      "title": "",
+      "id": "30064"
+    },
+    {
+      "type": "highlight",
+      "description": "signed62 requires `SECP256K1_WIDEMUL_INT128` (12-14) so 128-bit products are available.  Five `int64_t` limbs (17-21) now span the field; the `API` mirrors the 30-bit header.",
+      "file": "src/modinv64.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "30065"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_modinv64_divsteps_59` packs **2^62** (175), u,v,q,r evolve in the same pattern as before (178-206), and the determinant check (223-224) shows **2^65** = 59+6 bits because of the initial 8×identity factor. The outer constant-time loop needs only ten such blocks (597-603 in the same file).",
+      "file": "src/modinv64_impl.h",
+      "highlight": [
+        {
+          "start": 167,
+          "end": 216
+        }
+      ],
+      "title": "",
+      "id": "30066"
+    },
+    {
+      "type": "highlight",
+      "description": "`jacobi64_maybe_var` demonstrates reuse of the variable-time `posdivsteps` routine (741-742). While the loop runs it flips a tracking bit whenever reciprocity rules demand, yielding the **Jacobi symbol** without performing an actual inversion.",
+      "file": "src/modinv64_impl.h",
+      "highlight": [
+        {
+          "start": 720,
+          "end": 743
+        }
+      ],
+      "title": "",
+      "id": "30067"
+    },
+    {
+      "type": "highlight",
+      "description": "High-level code never manipulates limb arrays directly.  `scalar_inverse()` converts the scalar into signed62 limbs (971-972), calls the constant-time `modinv64` (972-973), and converts back; when 128-bit multiplication is absent the build links against the `signed30` path through analogous wrappers in the `32-bit scalar` file.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 959,
+          "end": 973
+        }
+      ],
+      "title": "",
+      "id": "30068"
+    },
+    {
+      "type": "textOnly",
+      "description": "Summary: both encodings run the same **Bernstein–Yang** algorithm.  `signed30` uses everyday 32-bit operations and 20×30-step blocks; `signed62`, enabled when 128-bit products exist, cancels nearly twice as many bits per block and needs just ten outer iterations.  **Constant-time entry points** fix those counts to hide data-dependent timing, whereas the `_var` versions run faster but leak information through early termination.  The Jacobi helpers and public inversion wrappers are thin facades over the same core `divstep` machinery.",
+      "title": "",
+      "id": "30069"
+    }
+  ]
+}

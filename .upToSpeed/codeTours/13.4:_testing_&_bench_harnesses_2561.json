@@ -1,0 +1,189 @@
+{
+  "title": "13.4: Testing & Bench Harnesses",
+  "id": "tCTd1Rwnsu8YkCnNVijcw6/7txMpz90TC/JwicK50gs=",
+  "originalId": 2561,
+  "position": 62,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This walkthrough shows how `libsecp256k1` validates its **Schnorr** implementation and how you can reuse those tests as living documentation.\nWe will visit three code files:\n- `tests_impl.h` – functional API checks, nonce safety tests and 19 **BIP-340** vectors.\n- `tests_exhaustive_impl.h` – algebraic proofs that iterate the entire subgroup.\n- `bench_impl.h` – tight loops that benchmark sign/verify.\nRead on for a guided tour, complete with line numbers you can copy-paste.",
+      "title": "",
+      "id": "30413"
+    },
+    {
+      "type": "highlight",
+      "description": "The helper on lines 15-21 flips a single bit in an input, calls `nonce_function_bip340` twice, and asserts the **32-byte** `nonce` differs.\nIf ever two distinct inputs produced the same nonce this **CHECK** would fail immediately.",
+      "file": "src/modules/schnorrsig/tests_impl.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 21
+        }
+      ],
+      "title": "",
+      "id": "30414"
+    },
+    {
+      "type": "highlight",
+      "description": "`run_nonce_function_bip340_tests()` enumerates every parameter – `msg`, `secret key`, `pubkey`, `algo string` and `aux randomness` – and subjects each to `COUNT` rounds of bit-flipping.\nLines 65-72 show six successive calls that must all yield unique `nonces`, protecting against accidental reuse.",
+      "file": "src/modules/schnorrsig/tests_impl.h",
+      "highlight": [
+        {
+          "start": 58,
+          "end": 73
+        }
+      ],
+      "title": "",
+      "id": "30415"
+    },
+    {
+      "type": "highlight",
+      "description": "The same function drives further edge-cases: passing `NULL` for `algo`, varying `message`/`algo` lengths, and the rule that an all-zero `aux array` equals a `NULL aux pointer`.  Any deviation from the spec would break one of these checks.",
+      "file": "src/modules/schnorrsig/tests_impl.h",
+      "highlight": [
+        {
+          "start": 75,
+          "end": 97
+        }
+      ],
+      "title": "",
+      "id": "30416"
+    },
+    {
+      "type": "highlight",
+      "description": "`test_schnorrsig_api()` doubles as a cookbook. Line 132 signs, line 150 verifies, while the dozen `CHECK_ILLEGAL` calls around them prove that `NULL` pointers, invalid keypairs and wrong contexts are all rejected. Copy these calls when integrating the API yourself.",
+      "file": "src/modules/schnorrsig/tests_impl.h",
+      "highlight": [
+        {
+          "start": 131,
+          "end": 151
+        }
+      ],
+      "title": "",
+      "id": "30417"
+    },
+    {
+      "type": "highlight",
+      "description": "Starting at line 206 the code walks through the **BIP-340** `CSV` vectors.  `Vector 0` signs a zero message with a tiny secret key and demands bit-for-bit equality with the reference signature before asserting `verify()` succeeds.  Further vectors introduce random values, edge values and malformed cases.",
+      "file": "src/modules/schnorrsig/tests_impl.h",
+      "highlight": [
+        {
+          "start": 206,
+          "end": 245
+        }
+      ],
+      "title": "",
+      "id": "30418"
+    },
+    {
+      "type": "highlight",
+      "description": "Here a deliberately bogus signature (`expected = 0`) must fail verification. Tests like these catch any bug that turns a rejection into a false positive.",
+      "file": "src/modules/schnorrsig/tests_impl.h",
+      "highlight": [
+        {
+          "start": 480,
+          "end": 504
+        }
+      ],
+      "title": "",
+      "id": "30419"
+    },
+    {
+      "type": "highlight",
+      "description": "`test_schnorrsig_sign_verify()` creates three fresh signatures, verifies them, then flips bits in `R`, in `s` and in the message. Each mutation must make `verify()` return `0`, proving the implementation is not malleable.",
+      "file": "src/modules/schnorrsig/tests_impl.h",
+      "highlight": [
+        {
+          "start": 868,
+          "end": 896
+        }
+      ],
+      "title": "",
+      "id": "30420"
+    },
+    {
+      "type": "highlight",
+      "description": "Exhaustive testing begins with `hardened_nonce_function_smallint()`: it maps an int k to a canonical 32-byte nonce so every possible k appears exactly once. This deterministic mapping enables stepping through the whole group.",
+      "file": "src/modules/schnorrsig/tests_exhaustive_impl.h",
+      "highlight": [
+        {
+          "start": 61,
+          "end": 76
+        }
+      ],
+      "title": "",
+      "id": "30421"
+    },
+    {
+      "type": "highlight",
+      "description": "Inside `test_exhaustive_schnorrsig_verify()` nested loops cover every (public-key `d`, nonce `k`) pair up to `n/2`. For each pair random messages are generated until every possible challenge `e` appears; then all candidate `s` values are tried. The **CHECK** on `line 131` enforces that exactly one `s` satisfies `R = kG = sG \u00022e\u00022 P`.",
+      "file": "src/modules/schnorrsig/tests_exhaustive_impl.h",
+      "highlight": [
+        {
+          "start": 83,
+          "end": 103
+        }
+      ],
+      "title": "",
+      "id": "30422"
+    },
+    {
+      "type": "highlight",
+      "description": "The mirror image, `test_exhaustive_schnorrsig_sign()`, forces the nonce to k by passing the hardened function via extraparams.  It then requires the library to output the mathematically expected R bytes (line 174) and s bytes (line 170).  Together with the verify loop this proves the signing equation over the full subgroup.",
+      "file": "src/modules/schnorrsig/tests_exhaustive_impl.h",
+      "highlight": [
+        {
+          "start": 142,
+          "end": 176
+        }
+      ],
+      "title": "",
+      "id": "30423"
+    },
+    {
+      "type": "highlight",
+      "description": "`bench_schnorrsig_sign()` runs `sign_custom()` in a tight loop, touching only the first two bytes of the message to avoid cache artefacts. Ideal for profiling scalar arithmetic and nonce generation.",
+      "file": "src/modules/schnorrsig/bench_impl.h",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 34
+        }
+      ],
+      "title": "",
+      "id": "30424"
+    },
+    {
+      "type": "highlight",
+      "description": "`bench_schnorrsig_verify()` parses the x-only pubkey each iteration and verifies the pre-generated signature – giving you pure verifier throughput numbers.",
+      "file": "src/modules/schnorrsig/bench_impl.h",
+      "highlight": [
+        {
+          "start": 37,
+          "end": 46
+        }
+      ],
+      "title": "",
+      "id": "30425"
+    },
+    {
+      "type": "highlight",
+      "description": "This code demonstrates how test data is prepared for benchmarking Schnorr signatures. For each iteration, it allocates memory for a keypair, message, and signature, then initializes them with deterministic test data. The code creates keypairs, signs messages, and serializes public keys to exercise the library's public API in a way that's suitable for performance measurements.",
+      "file": "src/modules/schnorrsig/bench_impl.h",
+      "highlight": [
+        {
+          "start": 59,
+          "end": 83
+        }
+      ],
+      "title": "",
+      "id": "30426"
+    },
+    {
+      "type": "textOnly",
+      "description": "**Key points**\n- Functional tests exercise every public API call, **nonce rule** and **Taproot tweak**.\n- 19 **BIP-340** vectors give known-good data; use them to debug other implementations.\n- Exhaustive tests iterate the entire subgroup, mathematically proving the **sign/verify equations**.\n- Benchmarks provide ready-made hot loops for measuring changes.\n\nUse these files as living documentation – copy their snippets when adding your own tests, or hook `run_schnorrsig_bench()` into your CI to spot performance regressions.",
+      "title": "",
+      "id": "30427"
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "title": "3.2: Scalar Front-End API & Core Logic",
+  "id": "Mt/xin8pIvUox91DW4Wj2zTthDxG/DAJBrlWl6Ks9VY=",
+  "originalId": 2509,
+  "position": 12,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour dissects the `scalar module`, showing how an opaque limb-array is wrapped in constant-time helpers, guarded by `VERIFY` checks, and reduced modulo the `Secp256k1` group order.",
+      "title": "",
+      "id": "29967"
+    },
+    {
+      "type": "highlight",
+      "description": "At build time exactly one back-end header is pulled in.  On mainstream 64-bit builds the `SECP256K1_WIDEMUL_INT128` path selects `scalar_4x64.h`, hiding the concrete layout from callers.",
+      "file": "src/scalar.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 19
+        }
+      ],
+      "title": "",
+      "id": "29968"
+    },
+    {
+      "type": "highlight",
+      "description": "Inside the chosen back-end: a scalar is merely `four 64-bit limbs`. Every higher-level piece of code must treat this `struct` as opaque and use the `helpers` we explore next.",
+      "file": "src/scalar_4x64.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 16
+        }
+      ],
+      "title": "",
+      "id": "29969"
+    },
+    {
+      "type": "highlight",
+      "description": "The group order n is hard-coded per limb (`SECP256K1_N_0` … `N_3`). Having the constants in limb form lets `addition` / `subtraction` stay branch-free and constant-time.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "29970"
+    },
+    {
+      "type": "highlight",
+      "description": "Public helpers offered to the rest of the library (one-liner summary each):\n- `set_b32` – import 32 bytes and reduce.\n- `set_b32_seckey` – same, plus `overflow==0` and non-zero checks.\n- `add` / `cadd_bit` – modular addition.\n- `mul` – 256×256 → 256 multiply.\n- `inverse` / `inverse_var` – modular inverse (constant-/variable-time).\n- `negate`, `half`, `cond_negate` – constant-time sign tricks.\n- `split_128`, `split_lambda` – decompositions used by `ECMULT` optimisation.",
+      "file": "src/scalar.h",
+      "highlight": [
+        {
+          "start": 31,
+          "end": 58
+        }
+      ],
+      "title": "",
+      "id": "29971"
+    },
+    {
+      "type": "highlight",
+      "description": "`scalar_clear` wipes the struct with `secp256k1_memclear`, guaranteeing secrets vanish from the stack.  All wrappers live in this file and are compiled with optional `VERIFY_CHECK` assertions.",
+      "file": "src/scalar_impl.h",
+      "highlight": [
+        {
+          "start": 28,
+          "end": 33
+        }
+      ],
+      "title": "",
+      "id": "29972"
+    },
+    {
+      "type": "highlight",
+      "description": "`set_b32_seckey` delegates to `set_b32`, then enforces two invariants: no overflow and not-zero. Returning `1/0` lets higher layers accept or reject secret keys with a single check.",
+      "file": "src/scalar_impl.h",
+      "highlight": [
+        {
+          "start": 34,
+          "end": 40
+        }
+      ],
+      "title": "",
+      "id": "29973"
+    },
+    {
+      "type": "highlight",
+      "description": "`scalar_add` performs limb-wise addition inside a 128-bit accumulator, records a top-carry, and finally calls `scalar_reduce` so the result is again < n. The whole path is free of data-dependent branches.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 94,
+          "end": 115
+        }
+      ],
+      "title": "",
+      "id": "29974"
+    },
+    {
+      "type": "highlight",
+      "description": "`scalar_mul` first computes the full 512-bit product (`scalar_mul_512`) and then reduces it with `scalar_reduce_512`. Splitting the task keeps the critical reduction logic compact and constant-time.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 855,
+          "end": 863
+        }
+      ],
+      "title": "",
+      "id": "29975"
+    },
+    {
+      "type": "highlight",
+      "description": "`scalar_inverse` converts to a signed-62 radix, calls the generic constant-time `modinv64`, converts back, and (under `VERIFY`) checks that zero maps to zero – catching accidental misuse.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 964,
+          "end": 977
+        }
+      ],
+      "title": "",
+      "id": "29976"
+    },
+    {
+      "type": "highlight",
+      "description": "A detailed comment motivates `scalar_split_lambda`: using the curve’s endomorphism we decompose `k` into two ~128-bit chunks so `ECMULT` can run with half-length scalars.",
+      "file": "src/scalar_impl.h",
+      "highlight": [
+        {
+          "start": 80,
+          "end": 90
+        }
+      ],
+      "title": "",
+      "id": "29977"
+    },
+    {
+      "type": "textOnly",
+      "description": "**ECDSA signing**, **Schnorr verification** and the **high-speed ECMULT engine** all rely on these verified, constant-time helpers while treating `secp256k1_scalar` as a black box.",
+      "title": "",
+      "id": "29978"
+    }
+  ]
+}

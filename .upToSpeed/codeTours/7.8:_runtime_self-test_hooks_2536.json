@@ -1,0 +1,72 @@
+{
+  "title": "7.8: Runtime Self-Test Hooks",
+  "id": "mb8BDMNDY18ePf1PYZYFPZ0Q3faCq75Kg+naoPmZ84g=",
+  "originalId": 2536,
+  "position": 37,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Every execution path that constructs a context first checks one tiny invariant: can the `library`’s own **SHA-256** produce an expected digest?  If this elementary test fails, something fundamental is wrong (compiler flags, endianness, memset-optimisation, …) and the `library` aborts before any cryptography is attempted.",
+      "title": "",
+      "id": "30192"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 14-24 build a 32-byte digest of a fixed 63-byte string; line 25 compares it to the hard-coded answer with `secp256k1_memcmp_var` – a constant-time memcmp that avoids leaking timing clues.",
+      "file": "src/selftest.h",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 25
+        }
+      ],
+      "title": "",
+      "id": "30193"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_selftest_passes()` is nothing more than a wrapper around that single `SHA-256` check, returning 1 on success and 0 on failure.",
+      "file": "src/selftest.h",
+      "highlight": [
+        {
+          "start": 28,
+          "end": 30
+        }
+      ],
+      "title": "",
+      "id": "30194"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_selftest()` in the main compilation unit immediately delegates to `secp256k1_selftest_passes()`. A failure triggers the global error callback, halting the program before any further state is initialised.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 86,
+          "end": 90
+        }
+      ],
+      "title": "",
+      "id": "30195"
+    },
+    {
+      "type": "highlight",
+      "description": "Because every context creation (here `secp256k1_context_preallocated_create`) invokes `secp256k1_selftest()` first, the guard executes automatically and exactly once per process, giving a **defence-in-depth** guarantee that no later code runs with a mis-compiled primitive.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 120,
+          "end": 124
+        }
+      ],
+      "title": "",
+      "id": "30196"
+    },
+    {
+      "type": "textOnly",
+      "description": "With this short path we see the component close: a lightweight, deterministic self-test enforced at construction time, catching tool-chain or platform issues long before they can corrupt higher-level cryptography.",
+      "title": "",
+      "id": "30197"
+    }
+  ]
+}

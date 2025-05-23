@@ -1,0 +1,168 @@
+{
+  "title": "8.1: ecdsa-and-eckey: Overview",
+  "id": "LKjKKfgBEPXVO/cG8K7eL4ViHM7X0yPiT+Q4cmNA53Q=",
+  "originalId": 2537,
+  "position": 38,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Everything is contained in four headers:\n- `src/ecdsa.h`\n- `src/ecdsa_impl.h`\n- `src/eckey.h`\n- `src/eckey_impl.h`\nKeep these names in mind – all routines you meet later live in, or are declared by, one of them.",
+      "title": "",
+      "id": "30307"
+    },
+    {
+      "type": "highlight",
+      "description": "`src/ecdsa.h` just publishes the helpers you call:\n- `sig_parse`\n- `sig_serialize`\n- `sig_verify`\n- `sig_sign`\nNo code lives here – only prototypes.",
+      "file": "src/ecdsa.h",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "30308"
+    },
+    {
+      "type": "textOnly",
+      "description": "The four helpers above are fully implemented further down in `src/ecdsa_impl.h`.",
+      "title": "",
+      "id": "30309"
+    },
+    {
+      "type": "highlight",
+      "description": "`src/eckey.h` exposes six small utilities:\n- Public-key helpers – parse / serialize (lines 17-18)\n- Key-tweak helpers – add & mul for private and public keys (lines 20-23)",
+      "file": "src/eckey.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 23
+        }
+      ],
+      "title": "",
+      "id": "30310"
+    },
+    {
+      "type": "textOnly",
+      "description": "Let's take a quick, high-altitude fly-over of `src/ecdsa_impl.h` – the file contains six logical clusters.",
+      "title": "",
+      "id": "30311"
+    },
+    {
+      "type": "highlight",
+      "description": "(i) Domain constants – `order` and `p-minus-order` – used later by the math.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 18,
+          "end": 35
+        }
+      ],
+      "title": "",
+      "id": "30312"
+    },
+    {
+      "type": "highlight",
+      "description": "**(ii) DER helpers** – tiny routines that read ASN.1 lengths and integers.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 36,
+          "end": 48
+        }
+      ],
+      "title": "",
+      "id": "30313"
+    },
+    {
+      "type": "highlight",
+      "description": "(iii) `sig_parse` – starts here, making heavy use of the `DER` helpers.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 141,
+          "end": 150
+        }
+      ],
+      "title": "",
+      "id": "30314"
+    },
+    {
+      "type": "highlight",
+      "description": "(iv) `sig_serialize` – turns the `r`,`s` scalars back into **DER**.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 171,
+          "end": 180
+        }
+      ],
+      "title": "",
+      "id": "30315"
+    },
+    {
+      "type": "highlight",
+      "description": "(v) `sig_verify` – recomputes `R` and checks it against the `signature`.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 195,
+          "end": 205
+        }
+      ],
+      "title": "",
+      "id": "30316"
+    },
+    {
+      "type": "highlight",
+      "description": "(vi) `sig_sign` – generates a signature and (optionally) a **recovery id**.",
+      "file": "src/ecdsa_impl.h",
+      "highlight": [
+        {
+          "start": 266,
+          "end": 275
+        }
+      ],
+      "title": "",
+      "id": "30317"
+    },
+    {
+      "type": "textOnly",
+      "description": "`src/eckey_impl.h` contains just two clusters.",
+      "title": "",
+      "id": "30318"
+    },
+    {
+      "type": "highlight",
+      "description": "First half – public-key parse / serialize helpers.",
+      "file": "src/eckey_impl.h",
+      "highlight": [
+        {
+          "start": 18,
+          "end": 28
+        }
+      ],
+      "title": "",
+      "id": "30319"
+    },
+    {
+      "type": "highlight",
+      "description": "Second half – tweak helpers (`add` & `mul` for both key types).",
+      "file": "src/eckey_impl.h",
+      "highlight": [
+        {
+          "start": 58,
+          "end": 73
+        }
+      ],
+      "title": "",
+      "id": "30320"
+    },
+    {
+      "type": "textOnly",
+      "description": "That’s the map: declarations in `ecdsa.h` and `eckey.h`, full implementations in their `*_impl.h` counterparts, each grouped into focused clusters. You now know where every major routine lives.",
+      "title": "",
+      "id": "30321"
+    }
+  ]
+}

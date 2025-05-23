@@ -1,0 +1,92 @@
+{
+  "title": "3.5: Low-Level Scalar Helpers for Exhaustive Tests",
+  "id": "W4LOrRkgYUHAoVVp82gehG/SkEKXqzS9DjuslKe5Ew4=",
+  "originalId": 2512,
+  "position": 15,
+  "steps": [
+    {
+      "type": "highlight",
+      "description": "The low-width backend represents a scalar with a single 32-bit word.  The short comment (line 12) and the `uint32_t` typedef (line 13) make clear that this file is **not** the regular 256-bit implementation.",
+      "file": "src/scalar_low.h",
+      "highlight": [
+        {
+          "start": 11,
+          "end": 14
+        }
+      ],
+      "title": "",
+      "id": "30288"
+    },
+    {
+      "type": "highlight",
+      "description": "How does this file end up in the build? The public dispatcher includes it only when the build defines `EXHAUSTIVE_TEST_ORDER` (line 12). Ordinary builds fall through to the constant-time `4×64` or `8×32` back-ends.",
+      "file": "src/scalar.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 15
+        }
+      ],
+      "title": "",
+      "id": "30289"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 16-22 construct `SCALAR_2P32` and a Horner-style macro chain that reduces 256-bit compile-time constants with nothing more than host 32-/64-bit arithmetic.  The logic is easy to read—and deliberately ignores constant-time concerns.",
+      "file": "src/scalar_low.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 22
+        }
+      ],
+      "title": "",
+      "id": "30290"
+    },
+    {
+      "type": "highlight",
+      "description": "Runtime helpers are equally straightforward. Addition (lines 51-53) performs a host add followed by a single modulus; it even returns whether the sum overflowed. Branches and timing therefore vary with the inputs.",
+      "file": "src/scalar_low_impl.h",
+      "highlight": [
+        {
+          "start": 47,
+          "end": 55
+        }
+      ],
+      "title": "",
+      "id": "30291"
+    },
+    {
+      "type": "highlight",
+      "description": "Multiplication is the same story (line 135): one native **multiply** and a **modulus**.  **Inversion** (170-180, not shown) brute-forces over the entire group—fine for tiny orders like 7, 13, 199 but unacceptable for production.",
+      "file": "src/scalar_low_impl.h",
+      "highlight": [
+        {
+          "start": 131,
+          "end": 137
+        }
+      ],
+      "title": "",
+      "id": "30292"
+    },
+    {
+      "type": "highlight",
+      "description": "Only the exhaustive test harness defines `EXHAUSTIVE_TEST_ORDER` (line 13), which drags the 32-bit backend into the build.  Release builds never set this symbol, so they never compile the code we just examined.",
+      "file": "src/tests_exhaustive.c",
+      "highlight": [
+        {
+          "start": 9,
+          "end": 15
+        }
+      ],
+      "title": "",
+      "id": "30293"
+    },
+    {
+      "type": "textOnly",
+      "description": "In summary: `scalar_low.[h|impl.h]` form a minimal, non-constant-time 32-bit implementation used **exclusively** when exhaustive tests exercise every element of a small toy group.  Production code steers clear of this path and keeps its constant-time, 256-bit arithmetic intact.",
+      "title": "",
+      "id": "30294"
+    }
+  ]
+}
