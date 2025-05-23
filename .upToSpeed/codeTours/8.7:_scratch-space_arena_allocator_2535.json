@@ -1,0 +1,150 @@
+{
+  "title": "8.7: Scratch-Space Arena Allocator",
+  "id": "S2WimtHyiy9lyBnqFijFlj3PgYaLanvVux/yYz+RBm4=",
+  "originalId": 2535,
+  "position": 36,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Many inner algorithms need short-lived workspace. Instead of sprinkling `malloc`/`free` pairs the codebase offers a tiny **arena** – a “**scratch space**”. We will inspect its data structure, its life-cycle helpers, and finally see how multi-scalar multiplication relies on it.",
+      "title": "",
+      "id": "30295"
+    },
+    {
+      "type": "highlight",
+      "description": "The arena header sits in front of the buffer.\n- `magic` (14-15) – eight bytes that must spell `\"scratch\"` at all times.\n- `data` (16) – first usable byte after the header.\n- `alloc_size` (19) – current stack pointer inside the arena.\n- `max_size` (21) – capacity decided at creation.",
+      "file": "src/scratch.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 22
+        }
+      ],
+      "title": "",
+      "id": "30296"
+    },
+    {
+      "type": "highlight",
+      "description": "scratch_create performs **one** `malloc` for header+buffer.\nLines 18-20 zero the header and stamp the magic tag, giving later helpers a constant-time way to authenticate the pointer (`memcmp_var`).",
+      "file": "src/scratch_impl.h",
+      "highlight": [
+        {
+          "start": 13,
+          "end": 23
+        }
+      ],
+      "title": "",
+      "id": "30297"
+    },
+    {
+      "type": "highlight",
+      "description": "`scratch_alloc` behaves like a stack frame:\n- `size` is first rounded to ALIGNMENT (77)\n- Tag check (84-87) defends against misuse\n- Bounds check (89-91) aborts if `capacity` would be exceeded\n- The returned `slice` (92) is zeroed (93) and alloc_size advanced (94)\n\nFailure returns `NULL` without modifying state.",
+      "file": "src/scratch_impl.h",
+      "highlight": [
+        {
+          "start": 73,
+          "end": 96
+        }
+      ],
+      "title": "",
+      "id": "30298"
+    },
+    {
+      "type": "highlight",
+      "description": "`checkpoint()` is a read-only snapshot – it just returns `alloc_size` (43).  Creating many nested frames is therefore free.",
+      "file": "src/scratch_impl.h",
+      "highlight": [
+        {
+          "start": 38,
+          "end": 44
+        }
+      ],
+      "title": "",
+      "id": "30299"
+    },
+    {
+      "type": "highlight",
+      "description": "`apply_checkpoint` enforces LIFO discipline.\nAttempting to \"roll forward\" (`51-53`) or using the wrong tag (`47-50`) triggers the error callback; otherwise the stack pointer is rewound (`55`).",
+      "file": "src/scratch_impl.h",
+      "highlight": [
+        {
+          "start": 46,
+          "end": 56
+        }
+      ],
+      "title": "",
+      "id": "30300"
+    },
+    {
+      "type": "highlight",
+      "description": "`destroy()` authenticates the tag (`28-31`) **and** checks that the arena is empty (`32`). The tag is then blanked (`33`) before the single free, reducing stale-pointer risks.",
+      "file": "src/scratch_impl.h",
+      "highlight": [
+        {
+          "start": 26,
+          "end": 35
+        }
+      ],
+      "title": "",
+      "id": "30301"
+    },
+    {
+      "type": "highlight",
+      "description": "When callers store secrets in the arena they can use `secp256k1_memclear` (222-241).  The implementation employs barriers so the compiler cannot elide the wipe.",
+      "file": "src/util.h",
+      "highlight": [
+        {
+          "start": 222,
+          "end": 241
+        }
+      ],
+      "title": "",
+      "id": "30302"
+    },
+    {
+      "type": "highlight",
+      "description": "The public **API** never exposes raw scratch pointers.  Context helpers forward creation/destruction through the context’s error callback, keeping allocation policy private.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 223,
+          "end": 230
+        }
+      ],
+      "title": "",
+      "id": "30303"
+    },
+    {
+      "type": "highlight",
+      "description": "Strauss-style multi-scalar multiplication uses a frame:\n- `checkpoint` (371-373)\n- five `scratch_alloc` calls (381-386)\nIf **any** allocation fails, `apply_checkpoint` (388-389) rolls back instantly – a concrete demonstration of the frame model.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 371,
+          "end": 389
+        }
+      ],
+      "title": "",
+      "id": "30304"
+    },
+    {
+      "type": "highlight",
+      "description": "Pippenger follows exactly the same recipe: `checkpoint` (655-659) then allocate its objects (678-688).  The constant `PIPPENGER_SCRATCH_OBJECTS` keeps this in sync with size calculations.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 654,
+          "end": 690
+        }
+      ],
+      "title": "",
+      "id": "30305"
+    },
+    {
+      "type": "textOnly",
+      "description": "Putting everything together: algorithms such as **multi-scalar multiplication** ask the context for a scratch space sized to their needs, open a frame via **checkpoint**, perform their work with `stack-like allocations`, rewind to the checkpoint, and return with the arena empty. The magic tag, **LIFO enforcement**, and **constant-time cleaning** facilities make the system both safe and side-channel resistant.",
+      "title": "",
+      "id": "30306"
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "title": "6.1: libsecp256k1 ecmult: Architectural Overview",
+  "id": "stn8+nziyGeEiCeGOMpn3FfHFxFuWNIfDt/V+ZsH3M8=",
+  "originalId": 2521,
+  "position": 22,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour covers every source file that participates in `libsecp256k1`’s scalar-by-point multiplication machinery (`ecmult*`).\nWe start at the public façade, dip into each implementation file just long enough to see its entry points and guiding comments, then glance at the helper files that bake the large lookup tables consumed at run-time.\nWe finish by mapping every routine to the layer it serves.",
+      "title": "",
+      "id": "31848"
+    },
+    {
+      "type": "highlight",
+      "description": "`ecmult.h` is the slim header other compilation units include. Lines 43-60 expose exactly two high-level primitives – single-scalar and multi-scalar multiplication – plus one sizing macro.",
+      "file": "src/ecmult.h",
+      "highlight": [
+        {
+          "start": 40,
+          "end": 60
+        }
+      ],
+      "title": "",
+      "id": "31849"
+    },
+    {
+      "type": "textOnly",
+      "description": "`secp256k1_ecmult()` handles one arbitrary point (plus an optional generator term).\n`secp256k1_ecmult_multi_var()` is a dispatcher that chooses Strauss, Pippenger or a fallback loop based on point count and scratch space.",
+      "title": "",
+      "id": "31850"
+    },
+    {
+      "type": "highlight",
+      "description": "`ecmult_impl.h` opens with tunables – window sizes, WNAF widths, scratch-object counts – laying the numeric foundation for everything below.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 1,
+          "end": 15
+        }
+      ],
+      "title": "",
+      "id": "31851"
+    },
+    {
+      "type": "highlight",
+      "description": "Mid-file we meet the primary entry `static void secp256k1_ecmult(...)`, the single-scalar work-horse used throughout the library.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 343,
+          "end": 360
+        }
+      ],
+      "title": "",
+      "id": "31852"
+    },
+    {
+      "type": "highlight",
+      "description": "Near the bottom the batch front-end `secp256k1_ecmult_multi_var()` parcels work to **Strauss** or **Pippenger** after sizing the scratch space.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 806,
+          "end": 814
+        }
+      ],
+      "title": "",
+      "id": "31853"
+    },
+    {
+      "type": "highlight",
+      "description": "`ecmult_gen_impl.h` supplies the *generator-only* engine. The highlighted comment explains how Mike Hamburg’s signed-digit multi-comb is combined with per-context blinding for side-channel resistance; `secp256k1_ecmult_gen` (line 54) is the entry.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 54,
+          "end": 80
+        }
+      ],
+      "title": "",
+      "id": "31854"
+    },
+    {
+      "type": "highlight",
+      "description": "`ecmult_const_impl.h` targets fixed-point uses other than the generator (ECDH, adaptor signatures, x-only maths).  The comment block frames a **GLV-plus-signed-digit strategy** before introducing `secp256k1_ecmult_const` (line 124).",
+      "file": "src/ecmult_const_impl.h",
+      "highlight": [
+        {
+          "start": 120,
+          "end": 134
+        }
+      ],
+      "title": "",
+      "id": "31855"
+    },
+    {
+      "type": "highlight",
+      "description": "`ecmult_compute_table.h` declares helpers that, at **compile-time**, materialise odd-multiple tables of G (and 2¹²⁸·G).",
+      "file": "src/ecmult_compute_table.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 15
+        }
+      ],
+      "title": "",
+      "id": "31856"
+    },
+    {
+      "type": "highlight",
+      "description": "Its implementation walks the ladder: start from `gen`, double once, then write every odd multiple into the storage array.",
+      "file": "src/ecmult_compute_table_impl.h",
+      "highlight": [
+        {
+          "start": 16,
+          "end": 34
+        }
+      ],
+      "title": "",
+      "id": "31857"
+    },
+    {
+      "type": "highlight",
+      "description": "`ecmult_gen_compute_table*` perform an analogous job for the comb-style generator tables.",
+      "file": "src/ecmult_gen_compute_table.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "31858"
+    },
+    {
+      "type": "highlight",
+      "description": "Inside, each comb block is expanded by iteratively adding a prepared `ds[tooth]` offset, doubling the table size every pass.",
+      "file": "src/ecmult_gen_compute_table_impl.h",
+      "highlight": [
+        {
+          "start": 49,
+          "end": 77
+        }
+      ],
+      "title": "",
+      "id": "31859"
+    },
+    {
+      "type": "highlight",
+      "description": "`precompute_ecmult.c` is a *build-time* generator.  Running it spits out `precomputed_ecmult.c`, embedding the finished tables directly in C.",
+      "file": "src/precompute_ecmult.c",
+      "highlight": [
+        {
+          "start": 69,
+          "end": 75
+        }
+      ],
+      "title": "",
+      "id": "31860"
+    },
+    {
+      "type": "highlight",
+      "description": "The companion header merely declares the arrays emitted above; ordinary object files just `extern`-link them.",
+      "file": "src/precomputed_ecmult.h",
+      "highlight": [
+        {
+          "start": 28,
+          "end": 34
+        }
+      ],
+      "title": "",
+      "id": "31861"
+    },
+    {
+      "type": "highlight",
+      "description": "A twin script for the generator comb tables, producing `precomputed_ecmult_gen.c`.",
+      "file": "src/precompute_ecmult_gen.c",
+      "highlight": [
+        {
+          "start": 71,
+          "end": 76
+        }
+      ],
+      "title": "",
+      "id": "31862"
+    },
+    {
+      "type": "highlight",
+      "description": "…and its minimalist header exporting the resulting `secp256k1_ecmult_gen_prec_table`.",
+      "file": "src/precomputed_ecmult_gen.h",
+      "highlight": [
+        {
+          "start": 18,
+          "end": 22
+        }
+      ],
+      "title": "",
+      "id": "31863"
+    },
+    {
+      "type": "textOnly",
+      "description": "Recap\n\n- `secp256k1_ecmult*` (Strauss/Pippenger) – general multi-scalar core.\n- `secp256k1_ecmult_gen` – generator-only, context-blinded, used by ECDSA/Schnorr signing.\n- `secp256k1_ecmult_const` – any **other** fixed base (ECDH, x-only tweaks, adaptor tricks).\n- `compute_table` headers build tables at compile-time when VERIFY=1.\n- `precompute` pairs snapshot those tables into `.c/.h` so standard builds ship ready-made.",
+      "title": "",
+      "id": "31864"
+    }
+  ]
+}

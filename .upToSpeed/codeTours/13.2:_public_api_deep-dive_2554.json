@@ -1,0 +1,98 @@
+{
+  "title": "13.2: Public API Deep-Dive",
+  "id": "8JB5Ks38gDVXgtkSemPh4slncCfQihUhHTXgsyuepc8=",
+  "originalId": 2554,
+  "position": 55,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour focuses on the public entry-points that an application uses to work with `ElligatorSwift` (`EllSwift`).  Each stop shows what the caller must provide, what the library returns, and where the security-sensitive knobs live.",
+      "title": "",
+      "id": "30513"
+    },
+    {
+      "type": "highlight",
+      "description": "A shared-secret **hash callback** is injected through the typedef below.\n- The implementation receives: the raw X coordinate (`x32`) and both encoded public keys (`ell_a64`, `ell_b64`), plus an opaque `data` pointer.\n- It must write the derived secret into `output` and **return 1**.\n- Returning **0** aborts `secp256k1_ellswift_xdh`; any other value is undefined behaviour.\nThis pluggable design lets callers choose an application-specific KDF while keeping scalar multiplication inside the library.",
+      "file": "include/secp256k1_ellswift.h",
+      "highlight": [
+        {
+          "start": 55,
+          "end": 70
+        }
+      ],
+      "title": "",
+      "id": "30514"
+    },
+    {
+      "type": "highlight",
+      "description": "Two ready-made `hashfp` implementations are provided.\n- `…_hash_function_prefix` does `SHA256(prefix64 ‖ A ‖ B ‖ X)`; the 64-byte `prefix64` is passed via the callback's `data` parameter—ideal for custom domain separation.\n- `…_hash_function_bip324` hard-codes the BIP324 tagged hash `bip324_ellswift_xonly_ecdh` and ignores `data`.  Use this when compatibility with Bitcoin's encrypted transport is required.",
+      "file": "include/secp256k1_ellswift.h",
+      "highlight": [
+        {
+          "start": 72,
+          "end": 84
+        }
+      ],
+      "title": "",
+      "id": "30515"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ellswift_encode` turns a standard `secp256k1_pubkey` into a 64-byte indistinguishable blob.\nCaller responsibilities:\n- Supply 32 bytes of high-quality entropy in `rnd32`. The bytes **must not** be a deterministic function of the public key—otherwise an observer could link encodings.\n- Accept that the function is **variable-time**; therefore only public data should be fed to it.\nThe routine always returns 1 and writes the encoding into `ell64`.",
+      "file": "include/secp256k1_ellswift.h",
+      "highlight": [
+        {
+          "start": 85,
+          "end": 112
+        }
+      ],
+      "title": "",
+      "id": "30516"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ellswift_decode` performs the inverse mapping.\nLike the encoder it is **variable-time**, so its inputs must be public.  Success is unconditional (always returns 1) and the reconstructed `secp256k1_pubkey` is written to the caller’s buffer.",
+      "file": "include/secp256k1_ellswift.h",
+      "highlight": [
+        {
+          "start": 114,
+          "end": 128
+        }
+      ],
+      "title": "",
+      "id": "30517"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ellswift_create` offers a safer one-shot helper when you already hold the secret key.\n- The secret key itself is mixed into the randomness that feeds the encoder, supplemented by optional `auxrnd32`. This mitigates weak or missing entropy sources.\n- Execution is **constant-time** in `seckey32` and `auxrnd32`, so these secrets stay hidden from timing observers.\nReturn value indicates whether the secret key was valid (1) or not (0).",
+      "file": "include/secp256k1_ellswift.h",
+      "highlight": [
+        {
+          "start": 129,
+          "end": 159
+        }
+      ],
+      "title": "",
+      "id": "30518"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ellswift_xdh` computes an x-only ECDH shared secret without ever decoding the public keys.\nKey points for callers:\n- `party` (0 = A, 1 = B) tells the library which encoded key corresponds to `seckey32` and thus avoids extra work.\n- The raw X coordinate is passed to the chosen `hashfp`, so you can plug in the built-ins or your own function for KDF / domain separation.\n- Scalar multiplication is **constant-time in the secret key**; failure can only stem from an invalid key or a `hashfp` that returns 0.",
+      "file": "include/secp256k1_ellswift.h",
+      "highlight": [
+        {
+          "start": 161,
+          "end": 194
+        }
+      ],
+      "title": "",
+      "id": "30519"
+    },
+    {
+      "type": "textOnly",
+      "description": "You now know how to encode, decode, create, and exchange `EllSwift keys`, how to supply the necessary **entropy**, and how to select or provide a **hash function** that fits your protocol.",
+      "title": "",
+      "id": "30520"
+    }
+  ]
+}

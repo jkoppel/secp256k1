@@ -1,0 +1,124 @@
+{
+  "title": "12.4: Keypair Creation & Tweaking Internals",
+  "id": "cBzIpep3LXurMrSDfmLJi5wASWCiQnBX9IyytkBzQbI=",
+  "originalId": 2552,
+  "position": 53,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "We will trace a `secp256k1_keypair` through packing, creation, extraction and tweaking, noting every decision that protects secrecy and keeps execution constant-time.",
+      "title": "",
+      "id": "30549"
+    },
+    {
+      "type": "highlight",
+      "description": "Writing a keypair exposes its exact byte layout. Lines 156-158 place the 32-byte secret scalar at `data[0]`, line 158 saves the 64-byte uncompressed public key at `data[32]`, giving a flat 96-byte blob.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 156,
+          "end": 159
+        }
+      ],
+      "title": "",
+      "id": "30550"
+    },
+    {
+      "type": "highlight",
+      "description": "`keypair_seckey_load` recreates the scalar and stores its success flag in `ret`. Immediately afterwards `secp256k1_declassify` marks that flag non-secret (line 168) so callers may branch on it without leaking timing that depends on the secret.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 162,
+          "end": 170
+        }
+      ],
+      "title": "",
+      "id": "30551"
+    },
+    {
+      "type": "highlight",
+      "description": "`keypair_load` always pre-initialises its outputs with harmless dummies (`G` for the point, `1` for the scalar at 188-191). Only then does it attempt to load the real values, with the public half first de-classified (182). If anything fails, the dummies remain and the function still returns.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 173,
+          "end": 194
+        }
+      ],
+      "title": "",
+      "id": "30552"
+    },
+    {
+      "type": "highlight",
+      "description": "Creating a keypair follows the normal `ecmult_gen` path (206) to generate the pubkey, packs both parts, and then invokes `secp256k1_memczero` (208). That constant-time wipe leaves the structure all-zero on failure, preventing accidental use of uninitialised secrets.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 196,
+          "end": 212
+        }
+      ],
+      "title": "",
+      "id": "30553"
+    },
+    {
+      "type": "highlight",
+      "description": "Many later steps insist that the public point has an even `Y` coordinate. This helper flips the sign when `Y` is odd (92-94) and returns the original parity. Holding parity information lets secret and public sides stay in sync.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 88,
+          "end": 97
+        }
+      ],
+      "title": "",
+      "id": "30554"
+    },
+    {
+      "type": "highlight",
+      "description": "`keypair_xonly_pub` combines the loader with the even-Y helper: after a successful load (243-245) it makes the point even (246-249), optionally reports the removed parity, and writes out the 32-byte x-only form (250).",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 234,
+          "end": 252
+        }
+      ],
+      "title": "",
+      "id": "30555"
+    },
+    {
+      "type": "highlight",
+      "description": "`keypair_xonly_tweak_add` shows the full constant-time choreography. It loads then instantly zeroes the caller’s copy (265-267), conditionally negates the secret when the point was odd (268-271), applies the tweak to both scalar and point (273-275), de-classifies the combined success flag (276) and finally re-packs only if everything worked (277-279).",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 255,
+          "end": 283
+        }
+      ],
+      "title": "",
+      "id": "30556"
+    },
+    {
+      "type": "highlight",
+      "description": "Why can tweak-addition fail? The helper in `eckey_impl.h` adds the tweak to the scalar and returns false if the result is zero (60-61). That happens precisely when `tweak == −sk`, which would make the resulting point the identity and therefore invalid.",
+      "file": "src/eckey_impl.h",
+      "highlight": [
+        {
+          "start": 58,
+          "end": 61
+        }
+      ],
+      "title": "",
+      "id": "30557"
+    },
+    {
+      "type": "textOnly",
+      "description": "You can now reason about every keypair operation. The 96-byte layout is fixed, failures leave only dummies or zeros, all secret-dependent branches are preceded by `declassify`, and tweaks are safe unless they would cancel the secret outright.",
+      "title": "",
+      "id": "30558"
+    }
+  ]
+}

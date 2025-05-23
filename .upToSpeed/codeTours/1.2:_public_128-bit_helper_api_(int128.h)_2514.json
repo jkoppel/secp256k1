@@ -1,0 +1,163 @@
+{
+  "title": "1.2: Public 128-bit helper API (int128.h)",
+  "id": "lL6/6TESrOoZOBpmOTFifLFyfBWskMPFpj/ANRuHElQ=",
+  "originalId": 2514,
+  "position": 2,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "In earlier walkthroughs you saw that `int128.h` only declares helpers – now we zoom in on what each one promises.",
+      "title": "",
+      "id": "29990"
+    },
+    {
+      "type": "highlight",
+      "description": "One `#if` picks the 128-bit backend: a native `__int128`, a portable `struct`, or a compile-time error.",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 6,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "29991"
+    },
+    {
+      "type": "highlight",
+      "description": "Unsigned helpers (1/4)\n- `load` – pack hi‖lo into a `u128`\n- `mul` – `a`×`b` → `u128`",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "29992"
+    },
+    {
+      "type": "highlight",
+      "description": "**Unsigned helpers (2/4)**\n- `accum_mul` – r += a×b  (mod 2¹²⁸)\n- `accum_u64` – r += a     (mod 2¹²⁸)",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 21,
+          "end": 30
+        }
+      ],
+      "title": "",
+      "id": "29993"
+    },
+    {
+      "type": "highlight",
+      "description": "Unsigned helpers (3/4)\n- `rshift` – logical right-shift; **timing depends on n – not constant-time**.",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 31,
+          "end": 34
+        }
+      ],
+      "title": "",
+      "id": "29994"
+    },
+    {
+      "type": "highlight",
+      "description": "**Unsigned helpers (4/4)**\n- `to_u64` – low limb\n- `hi_u64` – high limb\n- `from_u64` – set low limb, zero high",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 36,
+          "end": 40
+        }
+      ],
+      "title": "",
+      "id": "29995"
+    },
+    {
+      "type": "highlight",
+      "description": "**Unsigned checker**\n* `check_bits` – test r < 2ⁿ (n<128)",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 45,
+          "end": 48
+        }
+      ],
+      "title": "",
+      "id": "29996"
+    },
+    {
+      "type": "highlight",
+      "description": "**Signed helpers (1/5)**\n- `load` – pack `hi‖lo` into `i128`\n- `mul` – `a×b` → `i128`\n- `accum_mul` – `r += a×b` (overflow UB)",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 50,
+          "end": 59
+        }
+      ],
+      "title": "",
+      "id": "29997"
+    },
+    {
+      "type": "highlight",
+      "description": "**Signed helper (2/5)**\n- det – `a`·`d` − `b`·`c`",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 60,
+          "end": 62
+        }
+      ],
+      "title": "",
+      "id": "29998"
+    },
+    {
+      "type": "highlight",
+      "description": "Signed helper (3/5)\n- `rshift` – **arithmetic right-shift**; non-constant-time in `b`.",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 64,
+          "end": 67
+        }
+      ],
+      "title": "",
+      "id": "29999"
+    },
+    {
+      "type": "highlight",
+      "description": "**Signed helpers (4/5)**\n- `to_u64` – value mod 2⁶⁴\n- `to_i64` – range-checked cast\n- `from_i64` – write signed limb",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 69,
+          "end": 78
+        }
+      ],
+      "title": "",
+      "id": "30000"
+    },
+    {
+      "type": "highlight",
+      "description": "**Signed helpers (5/5)**\n- `eq_var` – variable-time equality\n- `check_pow2` – test `r == ±2ⁿ (n<127)`",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 80,
+          "end": 86
+        }
+      ],
+      "title": "",
+      "id": "30001"
+    },
+    {
+      "type": "textOnly",
+      "description": "Every declaration is tagged `SECP256K1_INLINE`, so the tiny bodies live in headers and vanish into call-sites at optimisation time – the header itself is the public contract.",
+      "title": "",
+      "id": "30002"
+    }
+  ]
+}

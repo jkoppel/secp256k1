@@ -1,0 +1,149 @@
+{
+  "title": "11.2: Public API for Recoverable Signatures",
+  "id": "Pmd43HqsFSjECaVQADeS6N7VjroMQJ3X3/eTmX1RVxI=",
+  "originalId": 2547,
+  "position": 48,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "We step through `include/secp256k1_recovery.h` to make every public entry-point second nature when calling from plain C.",
+      "title": "",
+      "id": "30579"
+    },
+    {
+      "type": "highlight",
+      "description": "The recoverable signature lives in an opaque 65-byte blob: 32 bytes r, 32 bytes s and 1 byte recid. Internals stay private, yet identical signatures compare equal with `memcmp`.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 26
+        }
+      ],
+      "title": "",
+      "id": "30580"
+    },
+    {
+      "type": "highlight",
+      "description": "This comment locks in two guarantees: (1) representation may change, so never peek inside, and (2) `size (65)` plus byte-for-byte equality remain stable across platforms and versions.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 23
+        }
+      ],
+      "title": "",
+      "id": "30581"
+    },
+    {
+      "type": "highlight",
+      "description": "Parsing a compact signature: you pass `ctx`, an output object, the `64-byte r‖s array` and a `recovery-id` in the range `0-3` that chooses which candidate public key is valid.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 36,
+          "end": 41
+        }
+      ],
+      "title": "",
+      "id": "30582"
+    },
+    {
+      "type": "textOnly",
+      "description": "Whenever the header says `compact` it always means the raw `64-byte r‖s` pair – no DER framing, no metadata.",
+      "title": "",
+      "id": "30583"
+    },
+    {
+      "type": "highlight",
+      "description": "Need a regular signature?  Convert copies (`r`,`s`) into a standard `secp256k1_ecdsa_signature` and discards the extra byte.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 50,
+          "end": 54
+        }
+      ],
+      "title": "",
+      "id": "30584"
+    },
+    {
+      "type": "highlight",
+      "description": "Serialisation mirrors parsing: supply a `64-byte buffer` and `int*`; the `library` fills both with `r‖s` and the selected `recid`.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 64,
+          "end": 69
+        }
+      ],
+      "title": "",
+      "id": "30585"
+    },
+    {
+      "type": "highlight",
+      "description": "Signing requires a context created with the `SIGN` flag (not the static context). Pass `NULL` for `noncefp` to fall back to the `RFC-6979` deterministic generator; or provide your own secure function.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 71,
+          "end": 91
+        }
+      ],
+      "title": "",
+      "id": "30586"
+    },
+    {
+      "type": "textOnly",
+      "description": "Inside the implementation the s value is always normalised to its low half-order, ensuring each valid signature has a unique encoding.",
+      "title": "",
+      "id": "30587"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecdsa_recover` both verifies the signature and outputs a fully initialised `secp256k1_pubkey` when it returns 1.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 102,
+          "end": 107
+        }
+      ],
+      "title": "",
+      "id": "30588"
+    },
+    {
+      "type": "highlight",
+      "description": "Classic `include-guard` plus `extern \"C\"` ensure the header is safe for C and C++ callers alike.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 1,
+          "end": 8
+        }
+      ],
+      "title": "",
+      "id": "30589"
+    },
+    {
+      "type": "highlight",
+      "description": "The closing brace and **endif** mirror the **opening guard**, completing the **hygiene pattern**.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 109,
+          "end": 113
+        }
+      ],
+      "title": "",
+      "id": "30590"
+    },
+    {
+      "type": "textOnly",
+      "description": "Return value convention: every call in this header returns `0` on invalid input or internal failure, non-zero on success. With these rules you can create, serialise, convert and recover **ECDSA** signatures confidently from `C`.",
+      "title": "",
+      "id": "30591"
+    }
+  ]
+}

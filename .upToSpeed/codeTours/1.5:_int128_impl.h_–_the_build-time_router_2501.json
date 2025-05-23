@@ -1,0 +1,33 @@
+{
+  "title": "1.5: int128_impl.h – the build-time router",
+  "id": "brnG7YL2sO7NKv9M/zbqLQJxG5JWiOmeD4re8mYps2o=",
+  "originalId": 2501,
+  "position": 5,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "The last stop in the wide-multiplication tour is the tiny glue header that finalises backend selection during compilation.",
+      "title": "",
+      "id": "29893"
+    },
+    {
+      "type": "highlight",
+      "description": "The familiar `#if` block re-appears, but this time it only chooses which concrete implementation `header` to pull in.",
+      "file": "src/int128_impl.h",
+      "highlight": [
+        {
+          "start": 8,
+          "end": 15
+        }
+      ],
+      "title": "",
+      "id": "29894"
+    },
+    {
+      "type": "textOnly",
+      "description": "There are no functions or data here\u00151 just pre-processor wiring that makes the selected `inline 128-bit arithmetic` visible. Because every `source file` that needs wide multiplication includes this `header`, the entire build sees a single, `constant-time 128-bit API`, independent of the underlying platform.",
+      "title": "",
+      "id": "29895"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "title": "11.1: Recoverable Signatures: Overview",
+  "id": "9GZt/Hk6D7pOXTK6YRfjB7rv1SoaGsQn3cQ+vorFhkE=",
+  "originalId": 2546,
+  "position": 47,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour traces how the `optional recovery module` plugs into the existing `secp256k1 core` and pin-points the few **files** and **functions** you actually need to know about.",
+      "title": "",
+      "id": "30567"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "include/secp256k1_recovery.h"
+      ],
+      "description": "The public interface lives in a dedicated header that is only compiled when `ENABLE_MODULE_RECOVERY` is defined – an opt-in module just like the others.",
+      "title": "",
+      "id": "30568"
+    },
+    {
+      "type": "highlight",
+      "description": "Everything a caller sees of a **recoverable signature** is this opaque `65-byte` blob; the extra byte stores the recovery id (`recid`) next to the usual `(r,s)` scalars.",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 27
+        }
+      ],
+      "title": "",
+      "id": "30569"
+    },
+    {
+      "type": "highlight",
+      "description": "First half of the public API.\n- `parse_compact`   (lines 36-41)  – read r‖s plus recid from 65 raw bytes\n- `convert`         (lines 50-54)  – drop the recid, yielding a normal `secp256k1_ecdsa_signature`",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 36,
+          "end": 54
+        }
+      ],
+      "title": "",
+      "id": "30570"
+    },
+    {
+      "type": "highlight",
+      "description": "Second half of the API.\n- `serialize_compact`  (64-69) – write r‖s + recid back to bytes\n- `sign_recoverable`   (84-91) – produce a signature that remembers the recid\n- `recover`            (102-107) – reconstruct the public key from a signature + message",
+      "file": "include/secp256k1_recovery.h",
+      "highlight": [
+        {
+          "start": 64,
+          "end": 107
+        }
+      ],
+      "title": "",
+      "id": "30571"
+    },
+    {
+      "type": "textOnly",
+      "description": "Notice the header carries declarations only – no code. That is consistent with the `library`’s **single-translation-unit design**: implementation appears elsewhere and is glued in with a `pre-processor include`.",
+      "title": "",
+      "id": "30572"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/modules/recovery/main_impl.h"
+      ],
+      "description": "All implementation lives in one header – `src/modules/recovery/main_impl.h` – which `secp256k1.c` includes when the module is enabled.",
+      "title": "",
+      "id": "30573"
+    },
+    {
+      "type": "highlight",
+      "description": "The usual `include-guard` and a single `#include` pulling in the `public header` we just toured.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "30574"
+    },
+    {
+      "type": "highlight",
+      "description": "Two private helpers marshal between the opaque 65-byte representation and internal scalar objects; they never touch the **heap** and are exact mirrors of each other.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 35
+        }
+      ],
+      "title": "",
+      "id": "30575"
+    },
+    {
+      "type": "highlight",
+      "description": "Wrapper layer.\n- `parse_compact`, `serialize_compact`, `convert` (`38-85`) are little more than argument checks plus calls to the marshal helpers.\n- `sign_recoverable` is implemented further below (`123-135`) and simply delegates to the core signing routine, then stores the recid.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 38,
+          "end": 85
+        }
+      ],
+      "title": "",
+      "id": "30576"
+    },
+    {
+      "type": "highlight",
+      "description": "Heavy-lifting core: `secp256k1_ecdsa_sig_recover` derives the original public key using the recid flag, scalar inverses, and one ecmult \t6 the only new mathematics unique to this module.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 87,
+          "end": 121
+        }
+      ],
+      "title": "",
+      "id": "30577"
+    },
+    {
+      "type": "textOnly",
+      "description": "The recovery module therefore adds public-key recovery on top of the existing `ECDSA` logic with zero dynamic allocation and the same constant-time discipline: an extra byte kept alongside `(r,s)` plus one routine to run the math backwards.",
+      "title": "",
+      "id": "30578"
+    }
+  ]
+}

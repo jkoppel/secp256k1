@@ -1,0 +1,202 @@
+{
+  "title": "15.3: Key Aggregation internals",
+  "id": "R7gmW5FcBGdNVtcm7BtKBcPfNNyUYB0ebFzj09jp768=",
+  "originalId": 2564,
+  "position": 65,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "We will trace a `Musig2` **key aggregation** from raw **participant keys** all the way to a **tweak-able, serialised cache blob**. Each stop shows how the library turns data into the **197-byte cache** and back, how **coefficients** are derived, and how later tweaks keep the **aggregate** consistent.",
+      "title": "",
+      "id": "30352"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_keyagg_cache_internal` – in-memory snapshot of an aggregate.\n- `pk`: the current aggregate point (already tweaked if tweaks were applied).\n- `second_pk`: the first key that differs from `pubkeys[0]`; infinity when all are identical (lines 17-19).\n- `pks_hash`: 32-byte tagged hash of the full key list (line 20).\n- `tweak`: running sum of every tweak applied so far (lines 21-22).\n- `parity_acc`: 1 if the aggregate had to be negated to make `Y` even, 0 otherwise (lines 23-25).",
+      "file": "src/modules/musig/keyagg.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 26
+        }
+      ],
+      "title": "",
+      "id": "30353"
+    },
+    {
+      "type": "highlight",
+      "description": "Four magic bytes `0xf4 0xad 0xbb 0xdf` mark an initialised cache (`line 19`).\nThe layout comment underneath tells us exactly why the blob is 197 bytes:\n4 (magic) + 64 (agg pk) + 64 (second pk) + 32 (list hash) + 1 (parity) + 32 (tweak) = 197.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 19,
+          "end": 29
+        }
+      ],
+      "title": "",
+      "id": "30354"
+    },
+    {
+      "type": "highlight",
+      "description": "`keyagg_cache_save` writes fields in that order.\nLines 33-43 advance a raw pointer through the buffer while:\n- packing the two points with `ge_to_bytes(_ext)`,\n- copying the hash,\n- storing one parity bit,\n- and finally the 32-byte scalar tweak.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 30,
+          "end": 44
+        }
+      ],
+      "title": "",
+      "id": "30355"
+    },
+    {
+      "type": "highlight",
+      "description": "`keyagg_cache_load` performs the inverse mapping.\nIt asserts the magic (48), decodes both points (50-53), restores the `32-byte hash` (54), parity bit (56) and scalar tweak (58).  The round-trip guarantees exact reproduction of the original 197-byte blob.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 46,
+          "end": 60
+        }
+      ],
+      "title": "",
+      "id": "30356"
+    },
+    {
+      "type": "highlight",
+      "description": "This code implements the standard \"tagged hash\" optimization from BIP-340. By pre-seeding SHA-256 with a fixed midstate (lines 67-75), the code avoids having to repeatedly compute the same initial hash for the key list. The comment above the function explains what this midstate represents.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 62,
+          "end": 76
+        }
+      ],
+      "title": "",
+      "id": "30357"
+    },
+    {
+      "type": "highlight",
+      "description": "`musig_compute_pks_hash` feeds each compressed (33-byte) pubkey into that midstate (lines 83-92) and finalises to the 32-byte `pks_hash` stored inside the cache.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 78,
+          "end": 95
+        }
+      ],
+      "title": "",
+      "id": "30358"
+    },
+    {
+      "type": "highlight",
+      "description": "`musig_keyaggcoef_internal` supplies the per-key weight used during aggregation.\n- If the point matches `second_pk` → coefficient = 1 (lines 121-124).\n- Otherwise another tag-based hash is computed over `pks_hash ‖ ser(pk)` (129-141) and converted into a scalar (141-142).",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 113,
+          "end": 143
+        }
+      ],
+      "title": "",
+      "id": "30359"
+    },
+    {
+      "type": "highlight",
+      "description": "`musig_pubkey_agg_callback` is the input generator for batch multiplication. For each index it loads the point (163-167) and asks the function above for its coefficient (171-172).",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 159,
+          "end": 172
+        }
+      ],
+      "title": "",
+      "id": "30360"
+    },
+    {
+      "type": "highlight",
+      "description": "Prior to aggregation the code locates the first key that differs from `pubkeys[0]` and stores it in `second_pk` (191-200).  If none are different, `second_pk` stays at infinity and no key receives the special coefficient `1`.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 191,
+          "end": 202
+        }
+      ],
+      "title": "",
+      "id": "30361"
+    },
+    {
+      "type": "highlight",
+      "description": "With `pks_hash` ready (203-205) a scratch-less `ecmult_multi_var` computes ∑ coefᵢ·Pᵢ (208-213).  The Jacobian result is converted to affine and its Y coordinate normalised at 214-215.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 203,
+          "end": 214
+        }
+      ],
+      "title": "",
+      "id": "30362"
+    },
+    {
+      "type": "highlight",
+      "description": "Cache and return values are produced next:\n- A fresh `keyagg_cache_internal` is filled (219-223) and flushed to the 197-byte blob (223-224).\n- The aggregate is made even-Y and exported as an `x-only pubkey` (227-229).",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 218,
+          "end": 229
+        }
+      ],
+      "title": "",
+      "id": "30363"
+    },
+    {
+      "type": "highlight",
+      "description": "Later tweaks go through `musig_pubkey_tweak_add_internal`.\nWhen `xonly` is true and the Y coordinate is odd, the point is negated (266-268); the function mirrors that sign change by flipping `parity_acc` and negating the *existing* tweak scalar.\nThen it adds the new tweak to the accumulator and applies it to the group element (270-272).",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 247,
+          "end": 271
+        }
+      ],
+      "title": "",
+      "id": "30364"
+    },
+    {
+      "type": "highlight",
+      "description": "The updated aggregate is validated as non-infinite (274-275), re-serialised with `keyagg_cache_save` (276) and optionally returned to the caller.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 271,
+          "end": 281
+        }
+      ],
+      "title": "",
+      "id": "30365"
+    },
+    {
+      "type": "highlight",
+      "description": "Two thin wrappers pick whether the tweak should respect x-only parity or not:\n- `pubkey_ec_tweak_add` (`283-285`) – full (x,y) tweaking.\n- `pubkey_xonly_tweak_add` (`287-289`) – tweak where the caller sees the x-only aggregate.",
+      "file": "src/modules/musig/keyagg_impl.h",
+      "highlight": [
+        {
+          "start": 283,
+          "end": 289
+        }
+      ],
+      "title": "",
+      "id": "30366"
+    },
+    {
+      "type": "textOnly",
+      "description": "You have now seen every moving part: **in-RAM structure**, **197-byte serialisation**, **list hash**, **per-key coefficients**, **batch aggregation**, **cache persistence**, and **parity-safe tweak logic**.  With this map you can reason about or extend `Musig2` key aggregation confidently.",
+      "title": "",
+      "id": "30367"
+    }
+  ]
+}

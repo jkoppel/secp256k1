@@ -1,0 +1,143 @@
+{
+  "title": "4.1: Scalar Arithmetic: Overview",
+  "id": "qiGQdKUW+a1FodGxd0jpTZg2/zk0cek8bOgZOjhZZF0=",
+  "originalId": 2508,
+  "position": 11,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour explores how the `library` represents and manipulates **scalars** – the **integers** that live modulo the `secp256k1 group order`. You will see the **public wrapper layer**, **two production back-ends**, a **special test-only variant**, and the **constant-time helpers** that compute **modular inverses**.",
+      "title": "",
+      "id": "30011"
+    },
+    {
+      "type": "textOnly",
+      "description": "Keep in mind a simple hierarchy: a pair of wrapper headers sit at the top; they hand real work to exactly one `back-end` chosen at compile time; a tiny one-word alternative appears only during exhaustive tests; separate helper `files` provide inverses shared by every `back-end`.",
+      "title": "",
+      "id": "30012"
+    },
+    {
+      "type": "highlight",
+      "description": "`scalar.h` commits to one representation by conditionally including the appropriate header. The build system defines exactly one of the symbols at line **14**, **16**, or **17**, so only one limb layout reaches the compiler.",
+      "file": "src/scalar.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "30013"
+    },
+    {
+      "type": "highlight",
+      "description": "Farther down the same file we find the **public API**: `helpers` for setting values, arithmetic (`add`, `mul`, `negate`, `half`…), inverses (`constant-time` and `variable-time`), and two special `split` functions used by the endomorphism acceleration. No logic lives here – these are just prototypes.",
+      "file": "src/scalar.h",
+      "highlight": [
+        {
+          "start": 48,
+          "end": 63
+        }
+      ],
+      "title": "",
+      "id": "30014"
+    },
+    {
+      "type": "highlight",
+      "description": "`scalar_impl.h` is the implementation counterpart. It re-includes the identical back-end headers that `scalar.h` chose, ensuring that wrappers and concrete maths share the very same limb layout.",
+      "file": "src/scalar_impl.h",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 25
+        }
+      ],
+      "title": "",
+      "id": "30015"
+    },
+    {
+      "type": "highlight",
+      "description": "Immediately afterwards the file defines two canonical constants (`one` and `zero`) and a `clear()` helper that scrubs sensitive data – tiny wrappers that do not need any back-end assistance.",
+      "file": "src/scalar_impl.h",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 34
+        }
+      ],
+      "title": "",
+      "id": "30016"
+    },
+    {
+      "type": "highlight",
+      "description": "The first production back-end packs a scalar into **4 × 64** words. This **4 × 64** layout is fastest on 64-bit CPUs that support 128-bit intermediate products (the wide multiplication required by the algorithm).",
+      "file": "src/scalar_4x64.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 18
+        }
+      ],
+      "title": "",
+      "id": "30017"
+    },
+    {
+      "type": "highlight",
+      "description": "The second back-end stores eight `32-bit` `limbs`. It trades a few extra words for excellent portability because it relies only on `64-bit` products, making it practical on `32-bit` and embedded targets.",
+      "file": "src/scalar_8x32.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 18
+        }
+      ],
+      "title": "",
+      "id": "30018"
+    },
+    {
+      "type": "highlight",
+      "description": "When `EXHAUSTIVE_TEST_ORDER` is defined, the library swaps in this one-word representation.  Arithmetic is reduced modulo a small compile-time order, letting the test-suite enumerate every possible scalar value.",
+      "file": "src/scalar_low.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "30019"
+    },
+    {
+      "type": "highlight",
+      "description": "`modinv32.h` provides **constant-time** modular inversion built on nine signed 30-bit limbs. Two entry points are offered: a strict **constant-time** routine and a `_var` variant whose timing may leak when the caller allows it.",
+      "file": "src/modinv32.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 37
+        }
+      ],
+      "title": "",
+      "id": "30020"
+    },
+    {
+      "type": "highlight",
+      "description": "`modinv64.h` mirrors that API using five signed 62-bit limbs.  A compile-time guard (line 12) insists that 128-bit wide multiplication is available, matching the needs of the 4 × 64 scalar back-end.",
+      "file": "src/modinv64.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 40
+        }
+      ],
+      "title": "",
+      "id": "30021"
+    },
+    {
+      "type": "textOnly",
+      "description": "To recap: `scalar.h` and `scalar_impl.h` form the façade and glue. Exactly one of the two production back-ends – **4×64** or **8×32** – provides real 256-bit arithmetic, while `scalar_low` appears only in exhaustive tests. All back-ends rely on the constant-time inversion helpers in `modinv32` or `modinv64`. With this map you can navigate every scalar and modular-inverse source file in the project.",
+      "title": "",
+      "id": "30022"
+    }
+  ]
+}

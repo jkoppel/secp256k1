@@ -1,0 +1,175 @@
+{
+  "title": "15.1: MuSig2 module: Overview",
+  "id": "gTbiwE7Z2puTBc6Xrtyi/MzkBqJsK7dWM71QIQXoneg=",
+  "originalId": 2562,
+  "position": 63,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "The **MuSig** component in `libsecp256k1` is designed to look small from the outside.  A single public header, half-a-dozen opaque structs, and six core functions are all a caller needs to know.",
+      "title": "",
+      "id": "30378"
+    },
+    {
+      "type": "highlight",
+      "description": "Everything starts with this file.  The guard and the lone dependency show that applications are meant to `#include` it directly; nothing else from `src/` is required.",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 1,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "30379"
+    },
+    {
+      "type": "highlight",
+      "description": "The opening comment doubles as user documentation, spelling out that this `header` fully implements **BIP-327** **MuSig2** and encourages developers to read it.",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 13,
+          "end": 26
+        }
+      ],
+      "title": "",
+      "id": "30380"
+    },
+    {
+      "type": "textOnly",
+      "description": "Instead of leaking internal details, the **API** hands back opaque, fixed-size containers. You allocate them, but you never peek inside.",
+      "title": "",
+      "id": "30381"
+    },
+    {
+      "type": "highlight",
+      "description": "The first three:\n- `keyagg_cache` (197 B) remembers how public keys were combined\n- `secnonce` (132 B) must stay secret\n- `pubnonce` (132 B) is broadcast to other signers",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 38,
+          "end": 70
+        }
+      ],
+      "title": "",
+      "id": "30382"
+    },
+    {
+      "type": "highlight",
+      "description": "And three more:\n\n- `aggnonce` (132 B) – the merged nonces\n- `session` (133 B) – binds message, nonce and key-aggregation\n- `partial_sig` (36 B) – one signer's Schnorr share",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 72,
+          "end": 98
+        }
+      ],
+      "title": "",
+      "id": "30383"
+    },
+    {
+      "type": "textOnly",
+      "description": "With the containers defined, the header exposes a six-step workflow that turns many keys into one **Schnorr signature**.",
+      "title": "",
+      "id": "30384"
+    },
+    {
+      "type": "highlight",
+      "description": "1️⃣ `musig_pubkey_agg` – combine individual public keys and initialise the key aggregation cache.",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 198,
+          "end": 205
+        }
+      ],
+      "title": "",
+      "id": "30385"
+    },
+    {
+      "type": "highlight",
+      "description": "2️⃣ `musig_nonce_gen` – each signer creates a one-time secret/public nonce pair; misuse-resistance advice is baked into the doc-comment.",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 362,
+          "end": 372
+        }
+      ],
+      "title": "",
+      "id": "30386"
+    },
+    {
+      "type": "highlight",
+      "description": "3️⃣ `musig_nonce_agg` – anyone (even an untrusted coordinator) can merge the individual public nonces.",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 455,
+          "end": 460
+        }
+      ],
+      "title": "",
+      "id": "30387"
+    },
+    {
+      "type": "highlight",
+      "description": "4️⃣ `musig_nonce_process` – every participant derives a session object that ties together aggregate nonce, message and key-aggregation.",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 474,
+          "end": 480
+        }
+      ],
+      "title": "",
+      "id": "30388"
+    },
+    {
+      "type": "highlight",
+      "description": "5️⃣ `musig_partial_sign` – using their secret nonce, each signer produces a 36-byte Schnorr share.",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 514,
+          "end": 521
+        }
+      ],
+      "title": "",
+      "id": "30389"
+    },
+    {
+      "type": "highlight",
+      "description": "6️⃣ `musig_partial_sig_agg` – the shares are combined into the final 64-byte Schnorr signature.",
+      "file": "include/secp256k1_musig.h",
+      "highlight": [
+        {
+          "start": 576,
+          "end": 582
+        }
+      ],
+      "title": "",
+      "id": "30390"
+    },
+    {
+      "type": "highlight",
+      "description": "The translation unit that backs the API is only a thin wrapper.  It merely pulls in `keyagg_impl.h` and `session_impl.h` where all real logic lives.",
+      "file": "src/modules/musig/main_impl.h",
+      "highlight": [
+        {
+          "start": 6,
+          "end": 11
+        }
+      ],
+      "title": "",
+      "id": "30391"
+    },
+    {
+      "type": "textOnly",
+      "description": "That’s the whole surface: one `public header`, two hidden `implementation files`, six core `entry-points` and a handful of opaque `structs`. You now have the map needed to navigate the rest of the `MuSig` code.",
+      "title": "",
+      "id": "30392"
+    }
+  ]
+}

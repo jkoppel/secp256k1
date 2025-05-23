@@ -1,0 +1,117 @@
+{
+  "title": "1.3: Native  __int128  backend",
+  "id": "hk1v6g3BP+/E0Vkrj640CwKlzptzP+1+xVmAwRBC5B4=",
+  "originalId": 2506,
+  "position": 3,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "The native-128 backend hands almost everything to the compiler: if the toolchain offers `__int128`, the library wraps it and nothing more.  The entire feature fits in fewer than 90 lines.",
+      "title": "",
+      "id": "29906"
+    },
+    {
+      "type": "highlight",
+      "description": "Compilation time feature-detection: if `__SIZEOF_INT128__` exists, `unsigned __int128` and `__int128` are typedef’d and the usual numeric limits are derived.",
+      "file": "src/int128_native.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "29907"
+    },
+    {
+      "type": "highlight",
+      "description": "Those two `typedefs` are re-exported behind the project prefix so other modules never need to know which backend was picked.",
+      "file": "src/int128_native.h",
+      "highlight": [
+        {
+          "start": 16,
+          "end": 18
+        }
+      ],
+      "title": "",
+      "id": "29908"
+    },
+    {
+      "type": "textOnly",
+      "description": "With the types in place, every helper routine in the implementation file is a direct expression on that `builtin type`.",
+      "title": "",
+      "id": "29909"
+    },
+    {
+      "type": "highlight",
+      "description": "Loading a 128-bit value (line 8) is a 64-bit shift plus add; multiplying two `uint64_t`s (line 12) is a single cast and `*`.",
+      "file": "src/int128_native_impl.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "29910"
+    },
+    {
+      "type": "highlight",
+      "description": "The accumulation helpers reuse the same expressions but precede them with `+=`, letting callers build products or sums incrementally.",
+      "file": "src/int128_native_impl.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 21
+        }
+      ],
+      "title": "",
+      "id": "29911"
+    },
+    {
+      "type": "highlight",
+      "description": "Right-shifting performs a constant-time range check (line 24) and then delegates to the builtin `shift` operator.",
+      "file": "src/int128_native_impl.h",
+      "highlight": [
+        {
+          "start": 23,
+          "end": 26
+        }
+      ],
+      "title": "",
+      "id": "29912"
+    },
+    {
+      "type": "highlight",
+      "description": "Signed multiplication mirrors the unsigned case: cast to `int128_t`, multiply, assign.",
+      "file": "src/int128_native_impl.h",
+      "highlight": [
+        {
+          "start": 49,
+          "end": 51
+        }
+      ],
+      "title": "",
+      "id": "29913"
+    },
+    {
+      "type": "highlight",
+      "description": "The 2×2 determinant helper is the only routine with real logic: it computes `ad` and `bc`, then uses `VERIFY_CHECK` to rule out signed overflow before subtraction.",
+      "file": "src/int128_native_impl.h",
+      "highlight": [
+        {
+          "start": 59,
+          "end": 63
+        }
+      ],
+      "title": "",
+      "id": "29914"
+    },
+    {
+      "type": "textOnly",
+      "description": "That completes the native-128 backend. All common 128-bit arithmetic—including overflow-safe signed math—was implemented in under a hundred lines because the compiler’s built-in type does the heavy lifting.",
+      "title": "",
+      "id": "29915"
+    }
+  ]
+}

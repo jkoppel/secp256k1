@@ -1,0 +1,130 @@
+{
+  "title": "1.1: int128-support: Overview",
+  "id": "9rz0u1MoRXBZm7yyURvXKaWi9tcaBAJgeuu2Yrv4FUs=",
+  "originalId": 2511,
+  "position": 1,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour gives you a mental map of the tiny `wide-multiply` subsystem: which files exist, and how the build chooses between them.",
+      "title": "",
+      "id": "29979"
+    },
+    {
+      "type": "highlight",
+      "description": "The public header is the entry point.  Lines 6-13 show a single `#if/#elif` ladder that selects exactly one backend at compile-time.",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 6,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "29980"
+    },
+    {
+      "type": "textOnly",
+      "description": "Two interchangeable backends live next to this header, each shipped as a `header`/`implementation` pair.",
+      "title": "",
+      "id": "29981"
+    },
+    {
+      "type": "highlight",
+      "description": "native: when the compiler supports `__int128`, this `header` exposes it as the library’s **128-bit type**.",
+      "file": "src/int128_native.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 17
+        }
+      ],
+      "title": "",
+      "id": "29982"
+    },
+    {
+      "type": "highlight",
+      "description": "**native implementation**: the same directory, first helper (line 7) already shows how work is delegated to real 128-bit arithmetic.",
+      "file": "src/int128_native_impl.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 14
+        }
+      ],
+      "title": "",
+      "id": "29983"
+    },
+    {
+      "type": "highlight",
+      "description": "`struct`: portable fallback that stores a 128-bit value as two 64-bit limbs (`hi`/`lo`).",
+      "file": "src/int128_struct.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "29984"
+    },
+    {
+      "type": "highlight",
+      "description": "struct implementation: arithmetic is hand-written on that two-limb representation (`first helper` shown here).",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 53,
+          "end": 61
+        }
+      ],
+      "title": "",
+      "id": "29985"
+    },
+    {
+      "type": "highlight",
+      "description": "`int128_impl.h` contains no logic of its own \t6 it simply mirrors the same backend switch and includes the matching `*_impl.h`.",
+      "file": "src/int128_impl.h",
+      "highlight": [
+        {
+          "start": 6,
+          "end": 15
+        }
+      ],
+      "title": "",
+      "id": "29986"
+    },
+    {
+      "type": "highlight",
+      "description": "Scrolling further in `int128.h`: these are the `u128_*` helpers every backend must implement (`load`, `mul`, `accum`…, `right-shift`…).",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 44
+        }
+      ],
+      "title": "",
+      "id": "29987"
+    },
+    {
+      "type": "highlight",
+      "description": "…and here is the parallel signed `i128_*` family that works the same way.",
+      "file": "src/int128.h",
+      "highlight": [
+        {
+          "start": 50,
+          "end": 86
+        }
+      ],
+      "title": "",
+      "id": "29988"
+    },
+    {
+      "type": "textOnly",
+      "description": "That’s the whole map: a thin `public header`, a `dispatcher glue file`, and two `drop-in backends` – pick one and the **prototypes** above come alive.",
+      "title": "",
+      "id": "29989"
+    }
+  ]
+}

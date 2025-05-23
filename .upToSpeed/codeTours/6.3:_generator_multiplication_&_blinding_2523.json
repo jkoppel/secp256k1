@@ -1,0 +1,150 @@
+{
+  "title": "6.3: Generator multiplication & blinding",
+  "id": "Runt4XsMe4girm5b8MeMc59P3QrIZwQOVZZyfIqLzvA=",
+  "originalId": 2523,
+  "position": 24,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "We follow `secp256k1`’s generator-multiplication step-by-step to see how `R = k·G` is computed in constant time while keeping k hidden.",
+      "title": "",
+      "id": "30104"
+    },
+    {
+      "type": "highlight",
+      "description": "The context dedicated to generator multiplication stores three blinding values.\n- `scalar_offset` – an additive tweak applied to every scalar (127).\n- `ge_offset`     – the point that compensates for that tweak (128).\n- `proj_blind`    – a field element that randomises the very first projective accumulator (132).",
+      "file": "src/ecmult_gen.h",
+      "highlight": [
+        {
+          "start": 117,
+          "end": 134
+        }
+      ],
+      "title": "",
+      "id": "30105"
+    },
+    {
+      "type": "highlight",
+      "description": "Lines 68-86 derive `comb(s,P) = (2·s − (2^`COMB_BITS`−1))·P`.\n89-104 inject a secret `b` and reach the identities that drive the whole design:\n  `scalar_offset = (2^`COMB_BITS`−1)/2 − b`  (100-101)\n  `ge_offset     = b·G`                    (101-102)\n  `R             = comb(d,G/2)+ge_offset`  (102-104) where `d = gn + scalar_offset`.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 68,
+          "end": 108
+        }
+      ],
+      "title": "",
+      "id": "30106"
+    },
+    {
+      "type": "highlight",
+      "description": "The next comment block explains how d is split.\n`mask(b)` (121-131) selects `COMB_TEETH` bits per block, and the pseudocode at 162-169 shows the outer `comb_off` loop evaluating `COMB_SPACING` slices, doubling between them.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 117,
+          "end": 158
+        }
+      ],
+      "title": "",
+      "id": "30107"
+    },
+    {
+      "type": "highlight",
+      "description": "**Real code for the double loop:**\n- For every slice and block, bits are gathered with **entropy-preserving rotations** (219).\n- The inner loop 209-228 builds a packed bits word without **secret-dependent branching**.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 191,
+          "end": 229
+        }
+      ],
+      "title": "",
+      "id": "30108"
+    },
+    {
+      "type": "highlight",
+      "description": "230-236 derive sign and abs indices.\n247-249 perform a constant-time cmov over the pre-computed table, ensuring uniform memory access.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 230,
+          "end": 249
+        }
+      ],
+      "title": "",
+      "id": "30109"
+    },
+    {
+      "type": "highlight",
+      "description": "After loading a table entry:\n1. Lines 252-255 conditionally negate y.\n2. Lines 259-262 rescale the accumulator with `proj_blind` during the first addition, masking all **Jacobian Z coordinates**.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 251,
+          "end": 266
+        }
+      ],
+      "title": "",
+      "id": "30110"
+    },
+    {
+      "type": "highlight",
+      "description": "When all slices are processed, 274-275 add `ge_offset`, cancelling the earlier subtraction of `b` and producing the desired `R`.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 268,
+          "end": 276
+        }
+      ],
+      "title": "",
+      "id": "30111"
+    },
+    {
+      "type": "highlight",
+      "description": "`ecmult_gen_blind()` refreshes blinding:\n- 305-313 seed an `RFC6979 PRNG` with the previous `scalar_offset` and user-provided seed.\n- 316-320 draw a non-zero `proj_blind` for projective masking.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 284,
+          "end": 320
+        }
+      ],
+      "title": "",
+      "id": "30112"
+    },
+    {
+      "type": "highlight",
+      "description": "321-332 pick a fresh random `b`, compute `b·G`, and set the new `scalar_offset` / `ge_offset` pair—fully updating **scalar blinding**.",
+      "file": "src/ecmult_gen_impl.h",
+      "highlight": [
+        {
+          "start": 321,
+          "end": 332
+        }
+      ],
+      "title": "",
+      "id": "30113"
+    },
+    {
+      "type": "highlight",
+      "description": "Library users call `secp256k1_context_randomize(ctx, seed32);` 751-753 forward the seed to `ecmult_gen_blind()`, rotating the `context`’s blinding whenever desired.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 747,
+          "end": 753
+        }
+      ],
+      "title": "",
+      "id": "30114"
+    },
+    {
+      "type": "textOnly",
+      "description": "Take-aways:\n1. The scalar is hidden by replacing it with `d = k + scalar_offset` and correcting with `ge_offset`.\n2. The comb algorithm accesses its tables through `cmov` and `rotation`, remaining constant-time.\n3. `proj_blind` masks the very first **Jacobian Z coordinate**; all later operations inherit that randomness.\n4. `ecmult_gen_blind()` — called at context creation and via `context_randomize()` — refreshes all blinding data with an **RFC6979 CSPRNG**.",
+      "title": "",
+      "id": "30115"
+    }
+  ]
+}

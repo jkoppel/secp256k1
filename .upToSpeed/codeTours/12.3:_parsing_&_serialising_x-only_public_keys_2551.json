@@ -1,0 +1,149 @@
+{
+  "title": "12.3: Parsing & Serialising X-Only Public Keys",
+  "id": "j/Eh5JSDk9aJmp7BWT1jdUo1eZKr14SpBDt7Z4lG3DQ=",
+  "originalId": 2551,
+  "position": 52,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "The next pages trace every helper that powers **x-only public keys**, showing how the implementation fulfils the public guarantees declared in the `extrakeys API` without leaking secret information.",
+      "title": "",
+      "id": "30592"
+    },
+    {
+      "type": "highlight",
+      "description": "Parsing starts by clearing the output `(28)`, range-checking the 32-byte X `(31)` and constructing an even-Y point `(34)`.  A subgroup check `(37)` rejects small-order points before the key is saved `(40)`.  This satisfies the header promise that the function returns **only** for fully valid keys and leaves *`pubkey` zeroed otherwise.*",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 26,
+          "end": 40
+        }
+      ],
+      "title": "",
+      "id": "30593"
+    },
+    {
+      "type": "highlight",
+      "description": "`fe_set_b32_limit` does the same normalisation regardless of acceptance; timing therefore reveals nothing.  The input value is public, so variable-time here is harmless.",
+      "file": "src/field_impl.h",
+      "highlight": [
+        {
+          "start": 274,
+          "end": 281
+        }
+      ],
+      "title": "",
+      "id": "30594"
+    },
+    {
+      "type": "textOnly",
+      "description": "`ge_set_xo_var` determines the unique point with the requested `X` and chosen **Y-parity** using constant-time quadratic-residue tests; its internal branches depend only on the public `X` value.",
+      "title": "",
+      "id": "30595"
+    },
+    {
+      "type": "highlight",
+      "description": "Serialisation writes exactly 32 bytes: the output is cleared (49), the cached point is loaded (52) and its normalised X is copied (55).  The **API** says the call **\"returns 1 always\"** – the code honours that.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 47,
+          "end": 56
+        }
+      ],
+      "title": "",
+      "id": "30596"
+    },
+    {
+      "type": "highlight",
+      "description": "`fe_get_b32` is a fixed 32-byte store after a normalisation assertion; no early exit, so timing is independent of secret data.",
+      "file": "src/field_impl.h",
+      "highlight": [
+        {
+          "start": 288,
+          "end": 294
+        }
+      ],
+      "title": "",
+      "id": "30597"
+    },
+    {
+      "type": "highlight",
+      "description": "**Canonicalisation**: if `Y` is odd (`92`) it is field-negated (`93`) and the original parity is returned. Negation flips the sign about the `X`-axis but leaves `X` unchanged.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 88,
+          "end": 96
+        }
+      ],
+      "title": "",
+      "id": "30598"
+    },
+    {
+      "type": "highlight",
+      "description": "The `fe_negate` macro always performs the same limb operations; even-Y canonicalisation is constant-time with respect to the value being negated.",
+      "file": "src/field.h",
+      "highlight": [
+        {
+          "start": 209,
+          "end": 217
+        }
+      ],
+      "title": "",
+      "id": "30599"
+    },
+    {
+      "type": "highlight",
+      "description": "Comparison serialises both inputs. If serialisation fails, the scratch buffer is force-zeroed (79) so **NULL**/invalid keys deterministically sort before any valid key. The final ordering is produced by `memcmp_var` (82).",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 64,
+          "end": 82
+        }
+      ],
+      "title": "",
+      "id": "30600"
+    },
+    {
+      "type": "highlight",
+      "description": "`memcmp_var` exits once a difference is found (260-262).  It is therefore **variable-time**, but that is acceptable because only public X coordinates are inspected.",
+      "file": "src/util.h",
+      "highlight": [
+        {
+          "start": 255,
+          "end": 263
+        }
+      ],
+      "title": "",
+      "id": "30601"
+    },
+    {
+      "type": "textOnly",
+      "description": "`memset` (not `memczero`) is used when comparison must wipe public buffers; **full constant-time clearing** (`memczero`) is reserved for secret values such as scalars and nonces.",
+      "title": "",
+      "id": "30602"
+    },
+    {
+      "type": "highlight",
+      "description": "Higher-layer view: Schnorr verification feeds the signature’s `R.x` into `fe_set_b32_limit` (239-241) and loads the signer’s x-only key via `xonly_pubkey_load` (248-250). The guarantees we analysed are prerequisites for signature correctness and safety.",
+      "file": "src/modules/schnorrsig/main_impl.h",
+      "highlight": [
+        {
+          "start": 239,
+          "end": 248
+        }
+      ],
+      "title": "",
+      "id": "30603"
+    },
+    {
+      "type": "textOnly",
+      "description": "Mapping back to the header guarantees:\n- `xonly_pubkey_parse` – returns 1 only for X<p, on-curve, prime-order points, zeroes on failure.\n- `xonly_pubkey_serialize` – always succeeds, emitting the 32-byte X.\n- `ge_even_y` – returns parity and ensures the stored point encodes an even-Y x-only key in constant time.\n- `xonly_pubkey_cmp` – provides a total lexicographic order, even when handed invalid keys, without touching secrets.\nThese properties are relied upon by **Schnorr**, **MuSig** and every other `x-only` based feature in the library.",
+      "title": "",
+      "id": "30604"
+    }
+  ]
+}

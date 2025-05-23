@@ -1,0 +1,149 @@
+{
+  "title": "6.4: Constant-time arbitrary-point multiplication",
+  "id": "kpPA+5wpWVA+7vx4oS7fMeTCTTZqdBfJkkjQRH7hZYw=",
+  "originalId": 2524,
+  "position": 25,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "When the base point itself is secret – as in ECDH, Taproot key-tweaks or MuSig – we need a scalar-by-point multiplication that leaks nothing about the scalar and does not rely on long-lived, public tables.\n`secp256k1_ecmult_const()` is that routine.  We will dissect its constant-time signed-digit ladder, explain why extra blinding is unnecessary, contrast it with the generic multiplication you already saw, and finish with its x-only helper used by higher-level protocols.",
+      "title": "",
+      "id": "30168"
+    },
+    {
+      "type": "highlight",
+      "description": "The function begins by turning the 256-bit scalar into a signed-digit value `C_l(v,A)` (Hamburg 2012, §3.3). Each bit is treated as a *sign*, letting one table of odd multiples cover all `2^group` possibilities with a single lookup per group.",
+      "file": "src/ecmult_const_impl.h",
+      "highlight": [
+        {
+          "start": 124,
+          "end": 139
+        }
+      ],
+      "title": "",
+      "id": "30169"
+    },
+    {
+      "type": "highlight",
+      "description": "Odd multiples of `A` and its GLV partner `λ·A` are built *at runtime* under a shared `Z` denominator (the **“effective-affine”** trick). Because the table lives only for this call, nothing persistent can be attacked across calls.",
+      "file": "src/ecmult_const_impl.h",
+      "highlight": [
+        {
+          "start": 222,
+          "end": 233
+        }
+      ],
+      "title": "",
+      "id": "30170"
+    },
+    {
+      "type": "highlight",
+      "description": "Table access is constant-time. Lines 64-68 derive an index without branches; the loop at 94-99 touches every slot and copies the right one with `cmov`. The possible negation of Y is also hidden behind a `cmov` (line 102).",
+      "file": "src/ecmult_const_impl.h",
+      "highlight": [
+        {
+          "start": 61,
+          "end": 103
+        }
+      ],
+      "title": "",
+      "id": "30171"
+    },
+    {
+      "type": "highlight",
+      "description": "**Group-by-group ladder:**\n1 🔹 lookup ±oddMultiple(A) (251-252)\n2 🔹 double exactly `ECMULT_CONST_GROUP_SIZE` times (257-259) to shift prior work\n3 🔹 add the **GLV** companion (262-263)\nThe number of iterations and operation mix are fixed, giving strict constant-time behaviour without scratch space.",
+      "file": "src/ecmult_const_impl.h",
+      "highlight": [
+        {
+          "start": 244,
+          "end": 264
+        }
+      ],
+      "title": "",
+      "id": "30172"
+    },
+    {
+      "type": "textOnly",
+      "description": "Why no additional blinding?\nGenerator-specific multiplication uses a **shared** pre-computed table and must blind accesses between calls.  Here the table is rebuilt from the secret base each time and accessed with `cmov`; there is nothing persistent to correlate, so extra scalar blinding would only waste cycles.",
+      "title": "",
+      "id": "30173"
+    },
+    {
+      "type": "highlight",
+      "description": "In contrast, the generic `secp256k1_ecmult()` encodes the scalar into variable-length WNAF (155-161 comment, 162-175 code).  The positions of non-zero digits and therefore the sequence of additions *depend on the scalar*, making it variable-time.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 162,
+          "end": 175
+        }
+      ],
+      "title": "",
+      "id": "30174"
+    },
+    {
+      "type": "highlight",
+      "description": "It also allocates temporary tables on a `scratch allocator` and chooses between `Strauss` or `Pippenger` for speed – perfect when the base is public, but incompatible with constant-time requirements for secret bases.",
+      "file": "src/ecmult_impl.h",
+      "highlight": [
+        {
+          "start": 349,
+          "end": 360
+        }
+      ],
+      "title": "",
+      "id": "30175"
+    },
+    {
+      "type": "textOnly",
+      "description": "**Guarantee comparison**\n- `ecmult_const` → constant-time in the scalar, stack-only, no scratch.\n- generic `ecmult` → variable-time, scratch-hungry, optimised for many or public points.",
+      "title": "",
+      "id": "30176"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecmult_const_xonly()` wraps the same ladder for x-only inputs. The surrounding comment (271-278) explains the algebra that avoids a square root when only the `X` coordinate is needed.",
+      "file": "src/ecmult_const_impl.h",
+      "highlight": [
+        {
+          "start": 270,
+          "end": 278
+        }
+      ],
+      "title": "",
+      "id": "30177"
+    },
+    {
+      "type": "highlight",
+      "description": "Inside the helper the heavy lifting is delegated straight back to `secp256k1_ecmult_const()` – the core routine we just studied.",
+      "file": "src/ecmult_const_impl.h",
+      "highlight": [
+        {
+          "start": 382,
+          "end": 385
+        }
+      ],
+      "title": "",
+      "id": "30178"
+    },
+    {
+      "type": "highlight",
+      "description": "Real-world use: `EllSwift’s ECDH` computes a **shared X coordinate** with the **x-only helper** – exactly the pattern used in **Taproot tweaks** and **MuSig key aggregation**.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 576,
+          "end": 580
+        }
+      ],
+      "title": "",
+      "id": "30179"
+    },
+    {
+      "type": "textOnly",
+      "description": "**Take-away**\nThe signed-digit, group-based ladder in `ecmult_const` delivers deterministic work and `cmov`-protected memory access; runtime tables remove the need for blinding. Its x-only variant plugs straight into `Taproot`, `MuSig` and modern `ECDH` – the constant-time workhorse whenever your base point is private.",
+      "title": "",
+      "id": "30180"
+    }
+  ]
+}

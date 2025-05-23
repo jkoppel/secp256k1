@@ -1,0 +1,98 @@
+{
+  "title": "12.1: Extra Keys Module: Overview",
+  "id": "5s0LAjRMsQ5nwAfUAFDMWBf5rEvER2HmkfEs+534nU4=",
+  "originalId": 2549,
+  "position": 50,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Everything about the `extrakeys` module is concentrated in one public header and one private implementation file. The public header defines the **ABI**; the private file hides the code inside the library.",
+      "title": "",
+      "id": "30559"
+    },
+    {
+      "type": "highlight",
+      "description": "Two opaque data types are introduced. Notice the fixed 64-byte layout of `secp256k1_xonly_pubkey` and 96-byte layout of `secp256k1_keypair`, which hide all internal details.",
+      "file": "include/secp256k1_extrakeys.h",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 35
+        }
+      ],
+      "title": "",
+      "id": "30560"
+    },
+    {
+      "type": "highlight",
+      "description": "The x-only pubkey helpers form the first API family. All prototypes begin with `secp256k1_xonly_pubkey_` and cover parsing, serialisation, comparison, conversion from a full pubkey, and tweaking.",
+      "file": "include/secp256k1_extrakeys.h",
+      "highlight": [
+        {
+          "start": 37,
+          "end": 100
+        }
+      ],
+      "title": "",
+      "id": "30561"
+    },
+    {
+      "type": "highlight",
+      "description": "The keypair helpers form the second family. Prototypes prefixed `secp256k1_keypair_` mirror creation, secret/public extraction, x-only conversion, and tweaking.",
+      "file": "include/secp256k1_extrakeys.h",
+      "highlight": [
+        {
+          "start": 158,
+          "end": 244
+        }
+      ],
+      "title": "",
+      "id": "30562"
+    },
+    {
+      "type": "highlight",
+      "description": "The private implementation lives in `main_impl.h` under `src/modules/extrakeys`. It includes the public header and `util.h`, keeping all logic in a single translation unit.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 1,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "30563"
+    },
+    {
+      "type": "highlight",
+      "description": "This file begins with inline `load/save` shims and then implements the `x-only pubkey` helpers, matching the header’s order.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 42
+        }
+      ],
+      "title": "",
+      "id": "30564"
+    },
+    {
+      "type": "highlight",
+      "description": "Halfway through, the code switches to keypair helpers. Everything from saving/loading internals to `secp256k1_keypair_create` is here.",
+      "file": "src/modules/extrakeys/main_impl.h",
+      "highlight": [
+        {
+          "start": 156,
+          "end": 212
+        }
+      ],
+      "title": "",
+      "id": "30565"
+    },
+    {
+      "type": "textOnly",
+      "description": "In summary: one public header, one private implementation file, two opaque types, and two cohesive families of APIs. Future tours will dive deep into each family’s algorithms.",
+      "title": "",
+      "id": "30566"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "title": "13.3: Decoding: XSwiftEC Mathematics Core",
+  "id": "dNg5cj33M22OBTVXJ4AR06ZlxRFg5QYkl1JwacNaZkg=",
+  "originalId": 2555,
+  "position": 56,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour follows the decoder that turns an `ElligatorSwift` pair `(u,t)` back into an `x-only` `secp256k1` point.  We begin with the algebraic comment, then examine the three candidate X coordinates (`x3`, `x2`, `x1`) evaluated in that order, and finish with the tiny wrappers that convert the winning fraction into an affine `X` and then a full (`x`,`y`) point.",
+      "title": "",
+      "id": "30490"
+    },
+    {
+      "type": "highlight",
+      "description": "The 60-line comment rewrites the original formulas so the implementation never has to divide by `Y` or take square-roots during decoding.\n- It introduces `s=t²` and `g=u³+7` (**lines 42-45**) so the three candidate `X` fractions only depend on `u`, `g`, `s`.\n- `c1` and `c2` (**lines 62-65**) fold `(√-3±0)/2` into single field multiplications.\n- **Lines 76-84** restate the final recipe: normalise inputs, maybe quadruple `s`, then try `x3`, `x2`, `x1` in that order.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 25,
+          "end": 85
+        }
+      ],
+      "title": "",
+      "id": "30491"
+    },
+    {
+      "type": "highlight",
+      "description": "**x3 branch.**\n- Lines 87-90 normalise `u` and compute `s=t²` (with fall-backs when either input is zero).\n- Lines 91-101 build `g=u³+7` and `p=g+s`, retrying with `4s` when `p=0`.\n- Lines 102-107 create the denominator `d=3s u²` and numerator `n=3s u³ – (g+s)²`.\n- Line 108 tests the fraction with `secp256k1_ge_x_frac_on_curve_var`; on success lines 109-112 return immediately.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 86,
+          "end": 113
+        }
+      ],
+      "title": "",
+      "id": "30492"
+    },
+    {
+      "type": "highlight",
+      "description": "x2 branch.\n- Line 114 reuses `p=g+s` as denominator.\n- Lines 115-118 assemble `n = u·(c1·s + c2·g)`.\n- Lines 119-121 contain an optimisation note: the curve-test will recompute `p²` even though `(g+s)²` was already available.\n- Lines 121-123 return when the fraction passes the on-curve check.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 114,
+          "end": 124
+        }
+      ],
+      "title": "",
+      "id": "30493"
+    },
+    {
+      "type": "highlight",
+      "description": "x1 fallback.\n- Lines 126-128 derive `n = –u·(c1·s + c2·g) – u·(g+s) = –(u*(c1s+c2g)/(g+s)+u)·(g+s)`.\n- Line 130 `VERIFY_CHECK` asserts that this last candidate is indeed on-curve before the function exits.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 126,
+          "end": 132
+        }
+      ],
+      "title": "",
+      "id": "30494"
+    },
+    {
+      "type": "highlight",
+      "description": "Thin wrappers.\n- `secp256k1_ellswift_xswiftec_var` (lines 135-140) simply inverts the denominator and multiplies to obtain the affine X.\n- `secp256k1_ellswift_swiftec_var` (lines 142-147) lifts that X back to a group element, copying the parity of t to pick the correct Y.",
+      "file": "src/modules/ellswift/main_impl.h",
+      "highlight": [
+        {
+          "start": 135,
+          "end": 147
+        }
+      ],
+      "title": "",
+      "id": "30495"
+    },
+    {
+      "type": "textOnly",
+      "description": "The decoder therefore searches `x3`, `x2`, `x1` in order, each time proving curve membership through `secp256k1_ge_x_frac_on_curve_var`.  The first passing candidate is converted to an affine X and then to a full point with matching Y-parity, completing the mapping from `(u,t)` to an x-only secp256k1 point.",
+      "title": "",
+      "id": "30496"
+    }
+  ]
+}

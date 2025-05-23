@@ -1,0 +1,150 @@
+{
+  "title": "1.4: Portable struct-based backend",
+  "id": "Yj4V7L7QT6l61c8Mbb5ZwX6j3fART5ib0W59Kg7yrfY=",
+  "originalId": 2500,
+  "position": 4,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Many C compilers expose a true **128-bit integer**, but portable cryptography cannot rely on that. This walkthrough shows how `libsecp256k1` synthesises the same behaviour from two **64-bit limbs** and intrinsics, choosing the fastest path the compiler can provide.",
+      "title": "",
+      "id": "29929"
+    },
+    {
+      "type": "highlight",
+      "description": "A 128-bit value is stored as two 64-bit words (`lo`, `hi`). Line 12 aliases the same layout for signed arithmetic, so all helpers can cast freely between unsigned and signed variants.",
+      "file": "src/int128_struct.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 12
+        }
+      ],
+      "title": "",
+      "id": "29930"
+    },
+    {
+      "type": "highlight",
+      "description": "At compile-time the code first asks: “am I on **MSVC x64/ARM64**?”  If so, `<intrin.h>` is included.  On ARM64 only `__umulh`/`__mulh` exist, so the low half comes from a regular multiply while the intrinsic returns the high half.",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 23
+        }
+      ],
+      "title": "",
+      "id": "29931"
+    },
+    {
+      "type": "highlight",
+      "description": "Still under `MSVC` but now on `x86-64`, stronger intrinsics `_umul128` / `_mul128` deliver both halves at once; simple `#define`s wire them up.",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 29
+        }
+      ],
+      "title": "",
+      "id": "29932"
+    },
+    {
+      "type": "highlight",
+      "description": "Every other compiler falls back to four 32×32→64 products.  Carries are accumulated through `mid34`, then folded into the final high word – a fully portable 64×64→128 routine.",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 31,
+          "end": 40
+        }
+      ],
+      "title": "",
+      "id": "29933"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_u128_mul` is now trivial: call the previously-selected primitive, store the returned low limb, and capture the high limb through the out-parameter.",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 58,
+          "end": 60
+        }
+      ],
+      "title": "",
+      "id": "29934"
+    },
+    {
+      "type": "highlight",
+      "description": "Accumulating a product needs explicit carry handling: after `lo += …`, an overflow is detected via `r->lo < lo` and propagated into `hi`.",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 62,
+          "end": 67
+        }
+      ],
+      "title": "",
+      "id": "29935"
+    },
+    {
+      "type": "highlight",
+      "description": "Logical right-shift distinguishes n \u0002264 (whole-limb move) from smaller shifts.  On MSVC/x64 an intrinsic `__shiftright128` is preferred; otherwise a portable blend reconstructs the result.",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 77,
+          "end": 91
+        }
+      ],
+      "title": "",
+      "id": "29936"
+    },
+    {
+      "type": "highlight",
+      "description": "The signed accumulator mirrors the unsigned one but adds two `VERIFY_CHECK`s that reason about sign bits; they fire in debug builds if overflow or underflow would occur.",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 123,
+          "end": 140
+        }
+      ],
+      "title": "",
+      "id": "29937"
+    },
+    {
+      "type": "highlight",
+      "description": "Higher-level helpers reuse the same primitives: a determinant is computed as `ad − bc` in four concise lines.",
+      "file": "src/int128_struct_impl.h",
+      "highlight": [
+        {
+          "start": 160,
+          "end": 163
+        }
+      ],
+      "title": "",
+      "id": "29938"
+    },
+    {
+      "type": "highlight",
+      "description": "Contrast the native backend: when the compiler provides `uint128_t`, the entire unsigned implementation collapses to a few one-liners.  Portability costs code, but the **public API** stays identical.",
+      "file": "src/int128_native_impl.h",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 15
+        }
+      ],
+      "title": "",
+      "id": "29939"
+    },
+    {
+      "type": "textOnly",
+      "description": "These building blocks let `libsecp256k1` run unchanged on compilers that lack `__int128`, while still exploiting precise intrinsics when available.  Mastering the limb layout, carry handling, and compile-time branching equips you to write similarly portable big-integer code.",
+      "title": "",
+      "id": "29940"
+    }
+  ]
+}

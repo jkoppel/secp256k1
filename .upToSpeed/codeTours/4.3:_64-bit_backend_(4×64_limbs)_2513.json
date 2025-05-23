@@ -1,0 +1,111 @@
+{
+  "title": "4.3: 64-bit Backend (4×64 limbs)",
+  "id": "XELaConBId7Y4hIf0tVnLHNqpca29UMqE1vVMEHntLE=",
+  "originalId": 2513,
+  "position": 13,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour unpacks the `4×64-bit scalar backend`. We begin with the **limb layout**, inspect the **pre-computed constants**, then follow an `8-limb wide multiply` through the `three-stage constant-time reducer`. Along the way we zoom in on the **single-carry helper macros** and the **branch-free conditional negation**, finishing with the **compile-time switch** that makes this backend the default on 64-bit platforms.",
+      "title": "",
+      "id": "30095"
+    },
+    {
+      "type": "highlight",
+      "description": "A `scalar` is four little-endian **64-bit** limbs. The `CONST` macro lets callers specify eight **32-bit** words (**big-endian** convention) which are packed into those limbs at compile-time.",
+      "file": "src/scalar_4x64.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 18
+        }
+      ],
+      "title": "",
+      "id": "30096"
+    },
+    {
+      "type": "highlight",
+      "description": "The implementation keeps the group order `n`, its two-complement `n_c = 2^256−n`, and `n_h = n/2`, all already split into the same limb layout so later arithmetic can treat them like ordinary scalars.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 30
+        }
+      ],
+      "title": "",
+      "id": "30097"
+    },
+    {
+      "type": "highlight",
+      "description": "`muladd`, `sumadd` and `extract` form a tight single-carry chain. `muladd` multiplies two 64-bit limbs in a 128-bit temporary, adds it into a 3-limb accumulator, and propagates exactly one carry – no branches, **constant time**.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 283,
+          "end": 333
+        }
+      ],
+      "title": "",
+      "id": "30098"
+    },
+    {
+      "type": "highlight",
+      "description": "**secp256k1_scalar_mul_512()** (**C path**) drives those helpers to compute the full 512-bit product `l[0..7]` of two scalars.  Squaring re-uses the same routine by passing the same pointer twice, so a dedicated `sqr_512` helper is unnecessary.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 815,
+          "end": 845
+        }
+      ],
+      "title": "",
+      "id": "30099"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_scalar_reduce_512()` converts the 8-limb product back to four limbs in three passes:\n- add n_c⋅ni to chop 512→385 bits,\n- add n_c again to reach 258 bits,\n- a final add and overflow check to land in [0,n).\nEvery step uses 128-bit accumulators so carries stay constant-time.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 601,
+          "end": 672
+        }
+      ],
+      "title": "",
+      "id": "30100"
+    },
+    {
+      "type": "highlight",
+      "description": "**Branch-free conditional negation:** `xor` with a **full-width mask** and then add the **masked group order**. The function returns ±1 so higher layers can rescale EC points without an extra comparison.",
+      "file": "src/scalar_4x64_impl.h",
+      "highlight": [
+        {
+          "start": 255,
+          "end": 278
+        }
+      ],
+      "title": "",
+      "id": "30101"
+    },
+    {
+      "type": "highlight",
+      "description": "At build time the `library` selects this backend whenever the compiler offers native 128-bit integers on a 64-bit target, making it the out-of-the-box choice for most modern platforms.",
+      "file": "src/scalar.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 19
+        }
+      ],
+      "title": "",
+      "id": "30102"
+    },
+    {
+      "type": "textOnly",
+      "description": "Putting it together: four **64-bit** limbs give compact storage; **128-bit** temporaries and single-carry macros yield data-independent timing; a **three-stage reducer** shrinks wide products; and constant-time helpers like `conditional negate` round out the arithmetic – reasons `this backend` is the default on **64-bit** builds.",
+      "title": "",
+      "id": "30103"
+    }
+  ]
+}

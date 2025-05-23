@@ -1,0 +1,124 @@
+{
+  "title": "3.2: Field Interface & VERIFY Layer",
+  "id": "kIwyAYbeteJIdGVCKI+GhDkpB+hm+Kwp6dy/WtZdmZc=",
+  "originalId": 2504,
+  "position": 7,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "We already know every concrete backend (`field_5x52_impl.h`, `field_10x26_impl.h`) works under the same high-level contract: every field element tracks two logical properties – magnitude and normalisation.  The generic layer we look at now is the place where those properties are defined, enforced, and (in non-debug builds) optimised away.",
+      "title": "",
+      "id": "29896"
+    },
+    {
+      "type": "highlight",
+      "description": "`field.h` documents the two invariants that accompany every `secp256k1_fe` value. The comments (lines 24-26) specify the ranges, while lines 27-30 describe how they become real struct members when verification is enabled.",
+      "file": "src/field.h",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 30
+        }
+      ],
+      "title": "",
+      "id": "29897"
+    },
+    {
+      "type": "highlight",
+      "description": "`SECP256K1_FE_VERIFY_FIELDS` (32-38) injects `int magnitude; int normalized;` into the struct – but only when the build is compiled with `-DVERIFY`. In production builds the macro expands to nothing, keeping the representation as small and fast as the backend demands.",
+      "file": "src/field.h",
+      "highlight": [
+        {
+          "start": 32,
+          "end": 38
+        }
+      ],
+      "title": "",
+      "id": "29898"
+    },
+    {
+      "type": "highlight",
+      "description": "`SECP256K1_FE_VERIFY_CONST` (48-56) is employed by constant initialisers.  It computes – at compile time – what the magnitude/normalised flags must be for a given limb array, and appends them to the struct when `VERIFY` is active.  If verification is off, the macro vanishes.",
+      "file": "src/field.h",
+      "highlight": [
+        {
+          "start": 48,
+          "end": 56
+        }
+      ],
+      "title": "",
+      "id": "29899"
+    },
+    {
+      "type": "highlight",
+      "description": "The alias block (74-104) shows how the whole wrapper layer disappears in non-`VERIFY` builds: each public function name is simply `#define`d to its backend implementation, so calls cost exactly one inlined instruction.",
+      "file": "src/field.h",
+      "highlight": [
+        {
+          "start": 74,
+          "end": 104
+        }
+      ],
+      "title": "",
+      "id": "29900"
+    },
+    {
+      "type": "highlight",
+      "description": "**`secp256k1_fe_add` illustrates the wrapper pattern:**\n- 324-327 pre-condition checks on both operands.\n- 328 delegates to the backend's `*_impl_add`.\n- 329-330 update bookkeeping (`magnitude` increases, `normalized` cleared).\n- 332 calls `SECP256K1_FE_VERIFY` to re-assert invariants.",
+      "file": "src/field_impl.h",
+      "highlight": [
+        {
+          "start": 322,
+          "end": 333
+        }
+      ],
+      "title": "",
+      "id": "29901"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_fe_negate_unchecked` applies the same structure to a unary operation: verify inputs, call backend, bump magnitude by 1, mark value non-normalised, then verify the result.",
+      "file": "src/field_impl.h",
+      "highlight": [
+        {
+          "start": 297,
+          "end": 306
+        }
+      ],
+      "title": "",
+      "id": "29902"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_fe_verify` is the run-time enforcement routine.  It first checks the generic invariants (154-159) and then hands control to the representation-specific `*_impl_verify` (161) so each backend can audit its own limb layout.",
+      "file": "src/field_impl.h",
+      "highlight": [
+        {
+          "start": 149,
+          "end": 168
+        }
+      ],
+      "title": "",
+      "id": "29903"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_fe_normalize` shows the connection to backend normalisation: after delegating to `secp256k1_fe_impl_normalize` (174) it writes `magnitude = 1`, `normalized = 1`, then re-verifies.",
+      "file": "src/field_impl.h",
+      "highlight": [
+        {
+          "start": 170,
+          "end": 179
+        }
+      ],
+      "title": "",
+      "id": "29904"
+    },
+    {
+      "type": "textOnly",
+      "description": "This generic layer therefore offers two modes: a zero-cost façade in release builds and an assert-heavy safety net in debug builds.  It guarantees that every backend respects the same abstract rules, giving higher-level code simple, platform-independent contracts to reason about.",
+      "title": "",
+      "id": "29905"
+    }
+  ]
+}

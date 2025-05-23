@@ -1,0 +1,227 @@
+{
+  "title": "11.3: Recoverable Signature Implementation",
+  "id": "dsCQiOlOHyD0CZbq0iW5ZzIqmWZfn4WltZdqbLpn6HQ=",
+  "originalId": 2548,
+  "position": 49,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "We will read `src/modules/recovery/main_impl.h` from top to bottom so you can confidently audit or extend the **ECDSA-recovery** module. Every concept is linked to primitives and public APIs you already know.",
+      "title": "",
+      "id": "30618"
+    },
+    {
+      "type": "highlight",
+      "description": "The file starts with the **MIT licence** banner and the include-guard `SECP256K1_MODULE_RECOVERY_MAIN_H`, preventing multiple definitions.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 1,
+          "end": 8
+        }
+      ],
+      "title": "",
+      "id": "30619"
+    },
+    {
+      "type": "highlight",
+      "description": "Including the public header keeps this implementation in lock-step with the API you toured earlier.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 10
+        }
+      ],
+      "title": "",
+      "id": "30620"
+    },
+    {
+      "type": "highlight",
+      "description": "Helper: `secp256k1_ecdsa_recoverable_signature_load()`. When sizeof(`secp256k1_scalar`)==32 (common back-ends) lines 14-19 simply `memcpy` the 32-byte big-endian r and s — a constant-time fast path.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "30621"
+    },
+    {
+      "type": "highlight",
+      "description": "Slow path for non-32-byte scalar layouts converts the same big-endian data with `scalar_set_b32` and pulls the one-byte recid from `sig->data[64]`. Both paths yield identical native scalars.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 21,
+          "end": 25
+        }
+      ],
+      "title": "",
+      "id": "30622"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_ecdsa_recoverable_signature_save()` mirrors `load()`: it writes `r`, `s` in 32-byte big-endian order then stores `recid`, guaranteeing a loss-free round-trip.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 35
+        }
+      ],
+      "title": "",
+      "id": "30623"
+    },
+    {
+      "type": "highlight",
+      "description": "`parse_compact()` begins with `VERIFY_CHECK` / `ARG_CHECK` guards and enforces `recid` ∈ 0…3 before processing external input.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 38,
+          "end": 46
+        }
+      ],
+      "title": "",
+      "id": "30624"
+    },
+    {
+      "type": "highlight",
+      "description": "The 64-byte wire data are decoded into scalars while tracking overflow. Any overflow clears `*sig` with `memset` (55-56) and the function returns `0` — **malformed inputs** never flow further.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 48,
+          "end": 56
+        }
+      ],
+      "title": "",
+      "id": "30625"
+    },
+    {
+      "type": "highlight",
+      "description": "`serialize_compact()` performs the exact inverse: `load()`, `scalar_get_b32()`, `write output64`, then copies out `recid`. The API therefore requires `recid!=NULL`.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 60,
+          "end": 72
+        }
+      ],
+      "title": "",
+      "id": "30626"
+    },
+    {
+      "type": "highlight",
+      "description": "`convert()` repackages a recoverable signature as a plain ECDSA signature by re-using `ecdsa_signature_save()` from the `core` module — no new maths involved.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 74,
+          "end": 85
+        }
+      ],
+      "title": "",
+      "id": "30627"
+    },
+    {
+      "type": "highlight",
+      "description": "`ecdsa_sig_recover()` — the heart of the file — first rejects `r==0` or `s==0` and copies `r` into a field element `fx` (100-103) ensuring it is < p.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 87,
+          "end": 99
+        }
+      ],
+      "title": "",
+      "id": "30628"
+    },
+    {
+      "type": "highlight",
+      "description": "If `recid`’s bit-1 is set, the group order (as a field element) is added so X lies in the second interval; `ge_set_xo_var()` then reconstructs the unique curve point R from X plus the parity bit (`recid&1`).",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 100,
+          "end": 110
+        }
+      ],
+      "title": "",
+      "id": "30629"
+    },
+    {
+      "type": "highlight",
+      "description": "Constant-time scalar algebra produces **r_n** = **r**⁻¹, **u_1** = −**m**·**r_n**, **u_2** = **s**·**r_n**, and `secp256k1_ecmult()` executes Shamir’s trick: **Q** = **u_1**·**G** + **u_2**·**R**.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 111,
+          "end": 118
+        }
+      ],
+      "title": "",
+      "id": "30630"
+    },
+    {
+      "type": "highlight",
+      "description": "If the resulting `Jacobian point` is at infinity recovery fails; otherwise it converts to `affine` and returns success.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 118,
+          "end": 121
+        }
+      ],
+      "title": "",
+      "id": "30631"
+    },
+    {
+      "type": "highlight",
+      "description": "`sign_recoverable()` is a thin wrapper around `ecdsa_sign_inner()`; it captures r, s and the recid chosen inside the signing algorithm and stores them via `save()`.",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 123,
+          "end": 135
+        }
+      ],
+      "title": "",
+      "id": "30632"
+    },
+    {
+      "type": "highlight",
+      "description": "`recover()` wires everything together: `load()`, sanity-check `recid`, convert the 32-byte message hash to a scalar, call `sig_recover()`, and save the resulting public key — or zero it on failure (154-155).",
+      "file": "src/modules/recovery/main_impl.h",
+      "highlight": [
+        {
+          "start": 137,
+          "end": 156
+        }
+      ],
+      "title": "",
+      "id": "30633"
+    },
+    {
+      "type": "textOnly",
+      "description": "**Memory-safety notes:** all `buffers` here are `stack-resident`; deeper `scalar`/`field helpers` clear sensitive data. No `malloc` or similar is ever called.",
+      "title": "",
+      "id": "30634"
+    },
+    {
+      "type": "textOnly",
+      "description": "Tests in `src/modules/recovery/tests_impl.h` exercise edge cases such as overflow and invalid recid — a worthwhile follow-up read.",
+      "title": "",
+      "id": "30635"
+    },
+    {
+      "type": "textOnly",
+      "description": "Signing ↔ recovery in one sentence: `sign_recoverable` → `save(r,s,recid)` ↔ `serialize`; `recover` → `sig_recover` → `pubkey`.  All heavy elliptic-curve maths lives in `primitives` you have already audited — this `file` mainly handles encoding and recovery-id plumbing.",
+      "title": "",
+      "id": "30636"
+    }
+  ]
+}

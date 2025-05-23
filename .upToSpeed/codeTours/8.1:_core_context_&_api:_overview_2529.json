@@ -1,0 +1,137 @@
+{
+  "title": "8.1: Core Context & API: Overview",
+  "id": "ifJbHVZeUmmv0jWnpm0kRrIMnCLiIvgN4KdagL3hqLo=",
+  "originalId": 2529,
+  "position": 30,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Nine core files form the heart of context handling and the public API:\n\n`include/secp256k1.h`\n`include/secp256k1_preallocated.h`\n`src/secp256k1.c`\n`src/assumptions.h`\n`src/util.h`\n`src/util_local_visibility.h`\n`src/scratch.h`\n`src/scratch_impl.h`\n`src/selftest.h`",
+      "title": "",
+      "id": "30157"
+    },
+    {
+      "type": "highlight",
+      "description": "The main header exposes `opaque handles` and every `top-level function`, defining the public `C API` applications compile against.",
+      "file": "include/secp256k1.h",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 35
+        }
+      ],
+      "title": "",
+      "id": "30158"
+    },
+    {
+      "type": "highlight",
+      "description": "A **malloc-free** flavour of the same **API**: callers hand over a `memory block` and receive a fully-functional context without `dynamic allocation`.",
+      "file": "include/secp256k1_preallocated.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "30159"
+    },
+    {
+      "type": "highlight",
+      "description": "This single translation unit pulls in every `*impl.h` file, keeps the library’s global/static context and implements all header-declared functions.",
+      "file": "src/secp256k1.c",
+      "highlight": [
+        {
+          "start": 18,
+          "end": 33
+        }
+      ],
+      "title": "",
+      "id": "30160"
+    },
+    {
+      "type": "highlight",
+      "description": "`Compile-time static-asserts` here verify compiler behaviour (**bit-widths**, **sign shifts**, **two’s-complement**) so **constant-time math** stays portable.",
+      "file": "src/assumptions.h",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 35
+        }
+      ],
+      "title": "",
+      "id": "30161"
+    },
+    {
+      "type": "highlight",
+      "description": "Utility macros, secure memory helpers and callback plumbing live here and are used across virtually every source file.",
+      "file": "src/util.h",
+      "highlight": [
+        {
+          "start": 87,
+          "end": 94
+        }
+      ],
+      "title": "",
+      "id": "30162"
+    },
+    {
+      "type": "highlight",
+      "description": "A tiny helper that tags internal globals/functions with `hidden` visibility on `ELF` platforms, keeping the public symbol table clean.",
+      "file": "src/util_local_visibility.h",
+      "highlight": [
+        {
+          "start": 4,
+          "end": 10
+        }
+      ],
+      "title": "",
+      "id": "30163"
+    },
+    {
+      "type": "highlight",
+      "description": "Declares the internal arena allocator (**\"scratch space\"**) structure and prototypes used for fast, temporary workspace during heavy computations.",
+      "file": "src/scratch.h",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 22
+        }
+      ],
+      "title": "",
+      "id": "30164"
+    },
+    {
+      "type": "highlight",
+      "description": "Inline implementation allocates one aligned buffer, hands out zero-initialised slices and supports checkpoints/rollbacks\u0012no system calls inside hot loops.",
+      "file": "src/scratch_impl.h",
+      "highlight": [
+        {
+          "start": 13,
+          "end": 24
+        }
+      ],
+      "title": "",
+      "id": "30165"
+    },
+    {
+      "type": "highlight",
+      "description": "Provides a minimal runtime self-test (currently `SHA-256`) that can be invoked at start-up to ensure the compiled binary behaves as expected.",
+      "file": "src/selftest.h",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 26
+        }
+      ],
+      "title": "",
+      "id": "30166"
+    },
+    {
+      "type": "textOnly",
+      "description": "With these pieces you know what exists: two public `headers`, one all-encompassing `C` file, **guard rails for portability**, **shared utilities**, an **internal scratch allocator** and a **safety self-test**.",
+      "title": "",
+      "id": "30167"
+    }
+  ]
+}

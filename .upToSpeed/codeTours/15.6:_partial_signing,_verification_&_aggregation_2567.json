@@ -1,0 +1,117 @@
+{
+  "title": "15.6: Partial signing, verification & aggregation",
+  "id": "yOU/1u4oqjxNoseiXwVkXGabPBIwWfVzoxj8UR8sNgQ=",
+  "originalId": 2567,
+  "position": 68,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "The remaining path from a signer’s secret nonce to the final 64-byte **Schnorr signature** is short but dense.  We will visit the helper that creates each partial signature, glance at the optional verifier, watch the aggregator, and then tie everything back into the two-round `MuSig2` flow.",
+      "title": "",
+      "id": "30368"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_musig_partial_sign()` starts by unpacking the secret nonce and making it impossible to reuse it.\n- Line 679 loads `k[0]`, `k[1]` and the public key from the `secnonce` object.\n- Line 682 overwrites the entire structure with zeros in constant-time – a second call with the same nonce would now fail.\nA signer therefore leaks no information even if an application accidentally calls the function twice.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 677,
+          "end": 683
+        }
+      ],
+      "title": "",
+      "id": "30369"
+    },
+    {
+      "type": "highlight",
+      "description": "Next the signer authenticates itself and aligns its secret key with the aggregate key:\n- Lines 693-698: Read the keypair and confirm that the nonce really belongs to the same public key.\n- Lines 704-710: Conditionally negate sk so that the aggregated key has even Y after all tweaks.\n- Lines 713-714: Call `musig_keyaggcoef()` to obtain the coefficient µ and scale the secret key – this embeds the signer's weight in the final challenge without touching elliptic-curve points.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 693,
+          "end": 715
+        }
+      ],
+      "title": "",
+      "id": "30370"
+    },
+    {
+      "type": "highlight",
+      "description": "The actual signature share is assembled:\n- 721-724 negate both `nonce` scalars when the final aggregate `nonce` has odd parity.\n- 727 multiplies the challenge `e` with the (already weighted) secret key.\n- 728-730 add `k[1]·b` and `k[0]` to fold the two secret nonces into the result.\n- 731 saves the scalar `s` and immediately wipes temporary secrets.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 721,
+          "end": 731
+        }
+      ],
+      "title": "",
+      "id": "30371"
+    },
+    {
+      "type": "highlight",
+      "description": "Tweak support is handled earlier, inside `nonce_process()`: 645-654 pre-compute `s_part = e·tweak` (sign-flipped when the **aggregate key parity** changed) and stash it in the session object.  This value is silently added during aggregation, so signers do not need to know about tweaks.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 645,
+          "end": 654
+        }
+      ],
+      "title": "",
+      "id": "30372"
+    },
+    {
+      "type": "highlight",
+      "description": "`secp256k1_musig_partial_sig_verify()` recreates everything required to check a share:\n- 762 builds the effective nonce R = R₁ + b·R₂.\n- 773-775 compute µ and then e = µ·challenge, so the `KeyAgg` coefficient is applied on the scalar side.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 760,
+          "end": 775
+        }
+      ],
+      "title": "",
+      "id": "30373"
+    },
+    {
+      "type": "highlight",
+      "description": "788-796 perform one multiexponentiation and a point addition to evaluate\n`-s·G + e·µ·P + R`.\nIf the result is the point at infinity (line 796) the share is valid; otherwise the signer supplied a bad share.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 788,
+          "end": 796
+        }
+      ],
+      "title": "",
+      "id": "30374"
+    },
+    {
+      "type": "textOnly",
+      "description": "Verifying every share is not mandatory – the coordinator could just aggregate and test the final signature – but doing it per signer reveals **which** participant misbehaved instead of merely signalling that something went wrong.",
+      "title": "",
+      "id": "30375"
+    },
+    {
+      "type": "highlight",
+      "description": "Aggregation is purely arithmetic on scalars:\n- 812-818 load each partial share, add it to `session_i.s_part` (which already holds the tweak term).\n- 819-820 write `R‖s_total` into the caller-provided 64-byte buffer. No curve work remains – the **Schnorr signature** is ready to forward or publish.",
+      "file": "src/modules/musig/session_impl.h",
+      "highlight": [
+        {
+          "start": 809,
+          "end": 821
+        }
+      ],
+      "title": "",
+      "id": "30376"
+    },
+    {
+      "type": "textOnly",
+      "description": "**Putting every piece into the MuSig2 timeline:**\nRound 1  –  each signer generates `k[0]`, `k[1]` and publishes its `pubnonce`; the coordinator aggregates nonces, computes `b`, the final `R`, challenge `e` and (if needed) `e·tweak`.\nRound 2  –  signers run `partial_sign` exactly as explored above, optionally the coordinator calls `partial_sig_verify` for each share, and finally `partial_sig_agg` concatenates `R` and the summed `s`.  The result is a standard `BIP-340` Schnorr signature usable anywhere an ordinary single-key signature is expected.",
+      "title": "",
+      "id": "30377"
+    }
+  ]
+}
